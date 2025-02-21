@@ -1,2 +1,8 @@
 node_modules
 sources/output
+helpers
+func_sources
+tact.config.json
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/settings.json

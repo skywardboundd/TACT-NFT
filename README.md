@@ -1,6 +1,6 @@
-# Tact template project
+# Tact NFT project
 
-This template comes pre-configured to kickstart your new Tact project. It includes the Tact compiler, TypeScript, Jest integrated with [Sandbox](https://github.com/ton-org/sandbox), and a sample demonstrating how to run tests.
+This project is a port of the contracts from Func NFT TEP-62 & supporting TEP-66.
 
 ## How to use
 

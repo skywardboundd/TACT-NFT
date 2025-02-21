@@ -1,18 +1,35 @@
 {
-    "projects": [{
-        "name": "sample",
-        "path": "./sources/contract.tact",
+    "projects": [
+    {
+        "name": "NFT",
+        "path": "./sources/nft-collection.tact",
         "output": "./sources/output",
         "mode": "full",
         "options": {
             "external": false,
-            "debug": false,
+            "debug": true,
             "ipfsAbiGetter": false,
             "interfacesGetter": false,
             "experimental": {
                 "inline": false
             }
         }
-    }]
+    },
+        {
+            "name": "NFT",
+            "path": "./sources/nft-item.tact",
+            "output": "./sources/output",
+            "mode": "full",
+            "options": {
+                "external": false,
+                "debug": false,
+                "ipfsAbiGetter": false,
+                "interfacesGetter": false,
+                "experimental": {
+                    "inline": false
+                }
+            }
+        }
+    ]
 }
 
