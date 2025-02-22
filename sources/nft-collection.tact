@@ -19,9 +19,9 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
     content: Cell;
     royaltyParams: RoyaltyParams;
 
-    init(owner: Address, collectionContent: Cell, royaltyParams: RoyaltyParams) {
+    init(owner: Address, nextItemIndex: Int, collectionContent: Cell, royaltyParams: RoyaltyParams) {
         self.owner = owner;
-        self.nextItemIndex = 0;
+        self.nextItemIndex = nextItemIndex;
         self.content = collectionContent;
         self.royaltyParams = royaltyParams;
     }
@@ -114,7 +114,9 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
     }
 
     get fun get_nft_content(index: Int, individualNFTContent: Cell): Cell {
-        let commonContent: Slice = self.content.beginParse().loadRef().beginParse();
+        let cs = self.content.beginParse();
+        cs.loadRef();
+        let commonContent = cs.loadRef().beginParse();
         return beginCell().storeUint(1, 8).storeSlice(commonContent).storeRef(individualNFTContent).endCell();
     }
 }

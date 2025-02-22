@@ -24,11 +24,17 @@ yarn deploy
 
 Let's look at some other useful commands.
 
-To test your contract after changes, run:
+To test TACT contracts run:
 
 ```shell
 yarn test
 ```
+
+To test func contracts change output folder in contract.spec.ts imports,to output_func and then 
+```shell
+yarn test 
+``` 
+
 
 If you want to quickly check your changes for validity, run:
 
@@ -47,10 +53,16 @@ If you rename `contract.tact`, be sure to update [`tact.config.json`](./tact.con
 
 ## Testing
 
-You can find some examples of contract tests in [`contract.spec.ts`](./sources/contract.spec.ts). For more information about testing, see the [Debugging and testing page in the Tact Documentation](https://docs.tact-lang.org/book/debug).
+Test TACT contracts with /ouput/ folder, test func contracts with /output_func/ contracts in 
+1) [`contract.spec.ts`](./sources/contract.spec.ts) 
+2) [`NFTCollectionExtension.d.ts`](./sources/utils/NFTCollectionExtension.d.ts) 
+3) [`NFTItemExtension.d.ts`](./sources/utils/NFTItemExtension.d.ts) 
 
-To add new test files to your contracts, create `*.spec.ts` files similar to the template's one. They will be automatically picked up by the testing commands, such as `yarn test`.
+And then 
 
+```shell 
+yarn test
+```
 ## License
 
 [MIT](./LICENSE)

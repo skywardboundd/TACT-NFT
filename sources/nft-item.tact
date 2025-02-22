@@ -6,7 +6,7 @@ import "./messages";
 asm fun emptyAddress(): Address { b{00} PUSHSLICE }
 
 contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
-    index: Int as uint256;
+    index: Int as uint64;
     collectionAddress: Address;
     ownerAddress: Address? = null;
     content: Cell? = null;
@@ -57,6 +57,8 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
         nativeThrowUnless(self.IncrorrectDeployer, self.ownerAddress != null);
         
         nativeThrowUnless(self.IncorrectSender, sender() == self.ownerAddress);
+        nativeThrowUnless(708, msg.forwardPayload.bits() >= 1);
+
         let fwdFees: Int = context().readForwardFee();
         
         self.forceChain(msg.newOwner);
@@ -66,7 +68,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
         }
 
         let needResponse: Bool = (msg.responseDestination.asSlice().preloadUint(2) != 0);
-        
+
         if (needResponse) {
             restAmount -= fwdFees;
         }
@@ -91,7 +93,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
    
     get fun get_nft_data(): NFTData {
         return NFTData{
-            init: self.ownerAddress != null ? 1 : 0,
+            init: self.ownerAddress != null ? -1 : 0,
             index: self.index,
             collectionAddress: self.collectionAddress,
             ownerAddress: self.ownerAddress,
