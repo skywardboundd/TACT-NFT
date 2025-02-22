@@ -115,4 +115,13 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
     get fun royalty_params(): RoyaltyParams {
         return self.royaltyParams;
     }
+
+    get fun get_nft_content(index: Int, individualNFTContent: Cell): GetNFTContent {
+        let commonContent: Slice = self.content.beginParse().loadRef().beginParse();
+        return GetNFTContent{
+            tag: 0,
+            commonContent: commonContent,
+            individualContent: individualNFTContent
+        };
+    }
 }

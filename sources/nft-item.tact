@@ -49,7 +49,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     }
 
     receive(msg: Transfer) {
-        nativeThrowUnless(self.IncorrectSender, sender() != self.ownerAddress);
+        nativeThrowUnless(self.IncorrectSender, sender() == self.ownerAddress);
         let fwdFees: Int = context().readForwardFee();
         
         self.forceChain(msg.newOwner);

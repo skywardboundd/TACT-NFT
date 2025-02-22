@@ -37,6 +37,11 @@ struct RoyaltyParams {
     owner: Address;
 }
 
+struct GetNFTContent {
+    tag: Int as uint8;
+    commonContent: Slice;
+    individualContent: Cell;
+}
 
 message(0x693d3950) GetRoyaltyParams {
     queryId: Int as uint64;

@@ -1,7 +1,8 @@
-import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Builder, Dictionary, DictionaryKey } from '@ton/core';
+import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Builder, Dictionary, DictionaryKey, openContract, TupleReader, TupleItem, TupleItemInt, TupleItemSlice, TupleItemCell } from '@ton/core';
 import {
     Blockchain,
     SandboxContract,
+    SmartContract,
     TreasuryContract,
     internal
 } from '@ton/sandbox';
@@ -19,16 +20,20 @@ import {
     RoyaltyParams,
     NFTInitData,
     loadNFTInitData,
-    storeNFTInitData
+    ChangeOwner
 } from "./output/NFT_NFTCollection";
 
 import {
     NFTItem,
     Transfer,
     NFTData,
-}   from "./output/NFT_NFTItem"
+    loadNFTData,
+    storeNFTInitData,  
+}   from "./output/NFT_NFTItem";
+
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
+import { send } from 'process';
 
 
 // const Transfer: Int = 0x5fcc3d14;
@@ -48,6 +53,36 @@ export type dictDeployNFT = {
     initNFTBody: NFTInitData;
 };
 
+
+const sendTransfer = async (
+    itemNFT: SandboxContract<NFTItem>,
+    from: Sender,
+    value: bigint,
+    newOwner: Address,
+    responceDestination: Address,
+    forwardAmount: bigint,
+    fornwardPayload: Slice,
+) => {
+    let msg: Transfer = {
+        $$type: 'Transfer',
+        queryId: 0n,
+        newOwner: newOwner,
+        responseDestination: responceDestination,
+        forwardAmount: forwardAmount,
+        forwardPayload: fornwardPayload,
+    };
+
+    return await itemNFT.send(from, { value }, msg);
+};
+
+function loadGetterTupleNFTData(source: TupleItem[]): NFTData {
+    let _init = (source[0] as TupleItemInt).value;
+    let _index = (source[1] as TupleItemInt).value;
+    let _collectionAddress = (source[2] as TupleItemSlice).cell.asSlice().loadAddress();
+    let _ownerAddress = (source[3] as TupleItemSlice).cell.asSlice().loadAddress();
+    let _content = (source[4] as TupleItemCell).cell;
+    return { $$type: 'NFTData' as const, init: _init, index: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+}
 
 export const dictDeployNFTItem = {
     serialize: (src: dictDeployNFT, builder: Builder) => {
@@ -79,7 +114,91 @@ const Op = {
 
 // import { findErrorCodeByMessage } from './utils/error';
 
+NFTItem.prototype.getOwner = async function (this: NFTItem, provider: ContractProvider): Promise<Address | null> {
+    let res = await this.getGetNftData(provider);
+    return res.ownerAddress;
+};
 
+describe("NFT Item Contract", () => {
+    let blockchain: Blockchain;
+    let itemNFT: SandboxContract<NFTItem>;
+    let owner: SandboxContract<TreasuryContract>;
+    let notOwner: SandboxContract<TreasuryContract>;
+    let defaultContent: Cell;
+
+    
+    beforeEach(async () => {
+        blockchain = await Blockchain.create();
+        owner = await blockchain.treasury("owner");
+        notOwner = await blockchain.treasury('notOwner');
+
+        defaultContent = beginCell().storeRef(beginCell().endCell()).endCell();
+
+        itemNFT = blockchain.openContract(await NFTItem.fromInit(0n, owner.address));
+        let deployItemMsg: NFTInitData = {
+            $$type: 'NFTInitData',
+            ownerAddress: owner.address,
+            content: defaultContent
+        }
+
+        let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().store(storeNFTInitData(deployItemMsg)).asSlice());
+        console.log(beginCell().store(storeNFTInitData(deployItemMsg)).asSlice());
+        expect(deployResult.transactions).toHaveTransaction({
+            from: owner.address,
+            to: itemNFT.address,
+            deploy: true,
+            success: true,
+        });
+
+    });
+
+    it("should deploy correctly", async () => {
+        // checking in beforeEach
+    });
+
+    it("should get static data correctly", async () => {
+        let staticData = await itemNFT.getGetNftData();
+
+        expect(staticData.init).toBe(1n);
+        expect(staticData.ownerAddress).toEqualAddress(owner.address);
+        expect(staticData.index).toBe(0n);
+        expect(staticData.content).toEqualCell(defaultContent);
+    });
+
+    it("Test ownership assigned", async () => {
+        let oldOwner = await itemNFT.getOwner();
+        expect(oldOwner).toEqualAddress(owner.address);
+        let trxRes = await sendTransfer(itemNFT, owner.getSender(), toNano("0.1"), notOwner.address, owner.address, 0n, beginCell().asSlice());
+        
+        // console.log(trxRes.transactions);
+        let newOwner = await itemNFT.getOwner();
+        expect(newOwner).toEqualAddress(notOwner.address);
+        expect(trxRes.transactions).toHaveTransaction({
+            from: owner.address,
+            to: itemNFT.address,
+            success: true,
+        });
+    });
+
+    // it("Not owner should not be able to transfer ownership", async () => {
+    //     let trxResult = await sendTransfer(itemNFT, notOwner.getSender(), toNano("0.1"), notOwner.address, owner.address, 0n, beginCell().asSlice());
+    //     expect(trxResult.transactions).toHaveTransaction({
+    //         from: notOwner.address,
+    //         to: itemNFT.address,
+    //         success: false,
+    //     });
+    // });
+});
+
+NFTCollection.prototype.getNextItemIndex = async function (this: NFTCollection, provider: ContractProvider): Promise<bigint> {
+    let res = await this.getGetCollectionData(provider);
+    return res.nextItemIndex;
+};
+
+NFTCollection.prototype.getOwner = async function (this: NFTCollection, provider: ContractProvider): Promise<Address> {
+    let res = await this.getGetCollectionData(provider);
+    return res.ownerAddress;
+};
 describe("NFT Collection Contract", () => {
     let blockchain: Blockchain;
     let collectionNFT: SandboxContract<NFTCollection>;
@@ -88,19 +207,11 @@ describe("NFT Collection Contract", () => {
     let owner: SandboxContract<TreasuryContract>;
     let notOwner: SandboxContract<TreasuryContract>;
 
-    let userWallet: any;
-
     let defaultContent: Cell;
     let royaltyParams: RoyaltyParams;
 
     const royaltyAsCell = (royaltyParams: RoyaltyParams): Cell => {
         return beginCell().store(storeRoyaltyParams(royaltyParams)).endCell();
-    };
-
-    NFTCollection.prototype.getNextItemIndex = async function (this: NFTCollection, provider: ContractProvider): Promise<bigint> {
-        let res = await this.getGetCollectionData(provider);
-        console.log(res);
-        return res.nextItemIndex;
     };
 
     const sendReportRoyaltyParams = async (
@@ -117,28 +228,9 @@ describe("NFT Collection Contract", () => {
                     return await collectionNFT.send(from, { value }, msg);
                 };
 
-    const sendTransfer = async (
-                    itemNFT: SandboxContract<NFTItem>,
-                    from: Sender,
-                    value: bigint,
-                    newOwner: Address,
-                    responceDestination: Address,
-                    forwardAmount: bigint,
-                    fornwardPayload: Slice,
-                ) => {
-                    let msg: Transfer = {
-                        $$type: 'Transfer',
-                        queryId: 0n,
-                        newOwner: newOwner,
-                        responseDestination: responceDestination,
-                        forwardAmount: forwardAmount,
-                        forwardPayload: fornwardPayload,
-                    };
     
-                    return await itemNFT.send(from, { value }, msg);
-                };
 
-    beforeAll(async () => {
+    beforeEach(async () => {
             blockchain = await Blockchain.create();
             owner = await blockchain.treasury("owner");
             notOwner = await blockchain.treasury('notOwner');
@@ -159,8 +251,6 @@ describe("NFT Collection Contract", () => {
                 params: royaltyParams,
             };
 
-            console.log(collectionNFT.address);
-
             let deployResult = await collectionNFT.send(owner.getSender(), {value: toNano("0.1")}, deployCollectionMsg);
 
             expect(deployResult.transactions).toHaveTransaction({
@@ -172,12 +262,14 @@ describe("NFT Collection Contract", () => {
 
 
             itemNFT = blockchain.openContract(await NFTItem.fromInit(0n, owner.address));
-            let deployItemMsg: GetStaticData = {
-                $$type: 'GetStaticData',
-                queryId: 0n,
+            let deployItemMsg: NFTInitData = {
+                $$type: 'NFTInitData',
+                ownerAddress: owner.address,
+                content: defaultContent
             }
 
-            deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, deployItemMsg);
+
+            deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().store(storeNFTInitData(deployItemMsg)).asSlice());
             
             expect(deployResult.transactions).toHaveTransaction({
                 from: owner.address,
@@ -188,9 +280,16 @@ describe("NFT Collection Contract", () => {
   });
 
     it("should deploy correctly", async () => {
-        // checking in befareAll
+        // checking in beforeEach
     });
     
+    it("should get static data correctly", async () => {
+        let staticData = await collectionNFT.getGetCollectionData();
+        expect(staticData.ownerAddress).toEqualAddress(owner.address);
+        expect(staticData.nextItemIndex).toBe(0n);
+        expect(beginCell().storeRef(staticData.collectionContent).endCell()).toEqualCell(defaultContent);
+    });
+
     it("----ROYALTY TESTS----", async () => {});
 
     it("test royalty msg", async () => {
@@ -224,7 +323,7 @@ describe("NFT Collection Contract", () => {
     
     it("test royalty getter", async () => {
         let currRoyaltyParams = await collectionNFT.getRoyaltyParams();
-        expect(currRoyaltyParams == royaltyParams);
+        expect(beginCell().store(storeRoyaltyParams(currRoyaltyParams)).asSlice()).toEqualSlice(beginCell().store(storeRoyaltyParams(royaltyParams)).asSlice());
     });
 
     it("owner should be able to change royalty params", async () => {
@@ -235,10 +334,11 @@ describe("NFT Collection Contract", () => {
             owner: owner.address,
         } 
 
-        sendReportRoyaltyParams(owner.getSender(), toNano("0.1"), newRoyaltyParams);
+        await sendReportRoyaltyParams(owner.getSender(), toNano("0.1"), newRoyaltyParams);
 
         let currRoyaltyParams = await collectionNFT.getRoyaltyParams();
-        expect(currRoyaltyParams == newRoyaltyParams);
+        expect(beginCell().store(storeRoyaltyParams(currRoyaltyParams)).asSlice()).toEqualSlice(beginCell().store(storeRoyaltyParams(newRoyaltyParams)).asSlice());
+
     });
 
     it("not owner should not be able to change royalty params", async () => {
@@ -261,7 +361,7 @@ describe("NFT Collection Contract", () => {
     it("----NFT DEPLOY TESTS----", async () => {});
 
     it("should deploy NFTItem correctly", async () => {
-        // checking in befareAll
+        // checking in beforeEach
     });
     
     const deployNFT = async (index: bigint, collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>): Promise<[SandboxContract<NFTItem>, any]>  => {
@@ -294,16 +394,15 @@ describe("NFT Collection Contract", () => {
         let [itemNFT, trx] = await deployNFT(nextItemIndex, collectionNFT, owner, owner);
         let nftData = await itemNFT.getGetNftData();
         
-        expect(nftData.content == content);
-        expect(nftData.ownerAddress == owner.address);
-        expect(nftData.index == nextItemIndex);
-        expect(nftData.collectionAddress == collectionNFT.address);
+        expect(nftData.content).toEqualCell(content);
+        expect(nftData.ownerAddress).toEqualAddress(owner.address);
+        expect(nftData.index).toBe(nextItemIndex);
+        expect(nftData.collectionAddress).toEqualAddress(collectionNFT.address);
 
     });
 
     it("should not mint NFTItem if not owner", async () => {
         let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
-        console.log(nextItemIndex);
 
         let [itemNFT, trx] = await deployNFT(nextItemIndex, collectionNFT, notOwner, notOwner);
 
@@ -341,6 +440,20 @@ describe("NFT Collection Contract", () => {
             to: collectionNFT.address,
             success: false,
         });
+    });
+
+    it("test get nft by index", async () => {
+        let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
+        
+        // deploy new nft to get index 
+        let [itemNFT, trx] = await deployNFT(nextItemIndex, collectionNFT, owner, owner);
+        let nftAddress = await collectionNFT.getGetNftAddressByIndex(nextItemIndex);
+        let newNFT = blockchain.getContract(nftAddress);
+        let getData = await (await newNFT).get('get_nft_data');
+        let dataNFT = loadGetterTupleNFTData(getData.stack);
+        
+        expect(dataNFT.index).toBe(nextItemIndex);
+        expect(dataNFT.collectionAddress).toEqualAddress(collectionNFT.address);
     });
 
     it("----BATCH MINT TESTS-----", async () => {});
@@ -399,7 +512,7 @@ describe("NFT Collection Contract", () => {
         });
     });
 
-    it('Should batch mint not owner', async () => {
+    it('Should not batch mint not owner', async () => {
         let trxResult = await batchMintNFTProcess(collectionNFT, notOwner, owner, 10n);
 
         expect(trxResult.transactions).toHaveTransaction({
@@ -408,5 +521,44 @@ describe("NFT Collection Contract", () => {
             success: false,
         });
     });
+
+    it("----TRANSFER OWNERSHIP TEST---", async ()  => {});
+
+    it("Owner should be able to transfer ownership", async () => { 
+        let changeOwnerMsg: ChangeOwner = { 
+            $$type: 'ChangeOwner',
+            queryId: 1n, 
+            newOwner: notOwner.address,
+        };
+
+        const trxResult = await collectionNFT.send(owner.getSender(), {value: 100000000n }, changeOwnerMsg);
+
+        expect(trxResult.transactions).toHaveTransaction(
+            {
+                from: owner.address,
+                to: collectionNFT.address,
+                success: true,
+            }
+        );
+        expect(await collectionNFT.getOwner()).toEqualAddress(notOwner.address);
+    });
+    it("Not owner should not be able to transfer ownership", async () => { 
+        let changeOwnerMsg: ChangeOwner = { 
+            $$type: 'ChangeOwner',
+            queryId: 1n, 
+            newOwner: owner.address,
+        };
+
+        const trxResult = await collectionNFT.send(notOwner.getSender(), {value: 100000000n }, changeOwnerMsg);
+
+        expect(trxResult.transactions).toHaveTransaction(
+            {
+                from: notOwner.address,
+                to: collectionNFT.address,
+                success: false,
+            }
+        );
+    });
+
 
 });
