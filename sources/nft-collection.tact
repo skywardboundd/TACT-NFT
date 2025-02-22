@@ -42,6 +42,8 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
         });
     }
 
+    receive() {} // igrore empty messages
+    
     receive(msg: GetRoyaltyParams) {
         send(SendParameters{
             to: sender(),
@@ -88,11 +90,6 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
         }
     }
 
-    receive(msg: ReportRoaltyParams) {
-        nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
-        self.royaltyParams = msg.params;
-    }
-
     receive(msg: ChangeOwner)  {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
         self.owner = msg.newOwner;
@@ -116,12 +113,8 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
         return self.royaltyParams;
     }
 
-    get fun get_nft_content(index: Int, individualNFTContent: Cell): GetNFTContent {
+    get fun get_nft_content(index: Int, individualNFTContent: Cell): Cell {
         let commonContent: Slice = self.content.beginParse().loadRef().beginParse();
-        return GetNFTContent{
-            tag: 0,
-            commonContent: commonContent,
-            individualContent: individualNFTContent
-        };
+        return beginCell().storeUint(1, 8).storeSlice(commonContent).storeRef(individualNFTContent).endCell();
     }
 }

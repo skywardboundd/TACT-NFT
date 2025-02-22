@@ -23,10 +23,10 @@ trait WalletExitcodes {
     const IncorrectSender: Int = 401;
     const IncorrectBalanceAfrerSend: Int = 706;
     const InvalidDestinationWorkchain: Int = 333;
-    const InvalidData: Int = 0xffff;
+    const InvalidData: Int = 130; // not handled
     const InvalidFees: Int = 402;
 }
 
 trait GasConstants{ 
-   const min_tons_for_storage: Int = 50000000;
+   const minTonsForStorage: Int = 50000000;
 }

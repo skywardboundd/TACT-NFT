@@ -36,8 +36,12 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
 
         nativeSendMessage(msg.endCell(), sendMode);
     }
+    //to ignore empty messages 
+    receive() {}
 
+    // we need it to accept deploy body from NFTCollection
     receive(msg: Slice){
+        // we need only use 
         nativeThrowUnless(self.InvalidData, self.ownerAddress == null);
 
         let ownerAddress: Address = msg.loadAddress();
@@ -49,16 +53,20 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     }
 
     receive(msg: Transfer) {
+        // not init 
+        nativeThrowUnless(self.IncrorrectDeployer, self.ownerAddress != null);
+        
         nativeThrowUnless(self.IncorrectSender, sender() == self.ownerAddress);
         let fwdFees: Int = context().readForwardFee();
         
         self.forceChain(msg.newOwner);
-        let restAmount: Int = myBalance() - self.min_tons_for_storage;
+        let restAmount: Int = myBalance() - self.minTonsForStorage;
         if (msg.forwardAmount > 0) {
             restAmount -= (msg.forwardAmount + fwdFees);
         }
 
-        let needResponse: Bool = msg.responseDestination != emptyAddress();
+        let needResponse: Bool = (msg.responseDestination.asSlice().preloadUint(2) != 0);
+        
         if (needResponse) {
             restAmount -= fwdFees;
         }
@@ -75,6 +83,9 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     }
 
     receive(msg: GetStaticData) {
+        // uninit
+        nativeThrowUnless(self.IncrorrectDeployer, self.ownerAddress != null);
+
         self.sendMsg(sender(), 0, self.ReportStaticData, msg.queryId, beginCell().storeUint(self.index, 256).storeAddress(self.collectionAddress), 64);
     }
    
