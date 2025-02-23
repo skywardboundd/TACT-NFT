@@ -46,7 +46,7 @@ const sendTransfer = async (
     from: Sender,
     value: bigint,
     newOwner: Address,
-    responceDestination: Address,
+    responceDestination: Address | null,
     forwardAmount: bigint,
     fornwardPayload: Slice = beginCell().storeUint(0, 1).asSlice(),
 ) => {
@@ -113,7 +113,7 @@ describe("NFT Item Contract", () => {
     let owner: SandboxContract<TreasuryContract>;
     let notOwner: SandboxContract<TreasuryContract>;
     let defaultContent: Cell;
-    let emptyAddress: Address;
+    let emptyAddress: Address | null;
     
 
     
@@ -122,14 +122,9 @@ describe("NFT Item Contract", () => {
         owner = await blockchain.treasury("owner");
         notOwner = await blockchain.treasury('notOwner');
 
-        emptyAddress = new Address(
-            0,
-            Buffer.from([
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0,
-            ])
-        )
-        // console.log(emptyAddress.toString());
+        emptyAddress = null
+        let xd = beginCell().storeAddress(emptyAddress).endCell();
+        // console.log(xd.asBuilder().bits);
 
         defaultContent = beginCell().storeRef(beginCell().endCell()).endCell();
 
@@ -143,12 +138,12 @@ describe("NFT Item Contract", () => {
         let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().store(storeNFTInitData(deployItemMsg)).asSlice());
         // console.log(itemNFT.getOwner());
         // // console.log(beginCell().store(storeNFTInitData(deployItemMsg)).asSlice());
-        // expect(deployResult.transactions).toHaveTransaction({
-        //     from: owner.address,
-        //     to: itemNFT.address,
-        //     deploy: true,
-        //     success: true,
-        // });
+        expect(deployResult.transactions).toHaveTransaction({
+            from: owner.address,
+            to: itemNFT.address,
+            deploy: true,
+            success: true,
+        });
 
     });
 
@@ -166,6 +161,7 @@ describe("NFT Item Contract", () => {
     it("should deploy correctly", async () => {
         // checking in beforeEach
     });
+    
     it("should get nft data correctly", async () => {
         let staticData = await itemNFT.getGetNftData();
         
@@ -186,70 +182,119 @@ describe("NFT Item Contract", () => {
 
     });
 
-
-    it("Test ownership assigned", async () => {
-        let oldOwner = await itemNFT.getOwner();
-        expect(oldOwner).toEqualAddress(owner.address);
-        let trxRes = await sendTransfer(itemNFT, owner.getSender(), toNano("0.1"), notOwner.address, owner.address, 1n);
-
-        // console.log(trxRes.transactions);
-        let newOwner = await itemNFT.getOwner();
-        expect(newOwner).toEqualAddress(notOwner.address);
-        expect(trxRes.transactions).toHaveTransaction({
-            from: owner.address,
-            to: itemNFT.address,
-            success: true,
+    describe("Transfer ownership reject cases", () => {
+        it("Transfer forward amount too much", async () => {
+            // NFT should reject transfer if balance lower than forward_amount + message forward fee + minimal storage fee
+            // Sending message with forward_amount of 1 TON and balance 0.1 TON
+    
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("0.1"), notOwner.address, emptyAddress, toNano("1"));
+            // console.log(trxResult.transactions);
+            expect(trxResult.transactions).toHaveTransaction({
+                from: owner.address,
+                to: itemNFT.address,
+                success: false,
+                exitCode: 402, // invalid fees
+            });
+        });
+    
+        it("test transfer storage fee", async () => {
+            //     Now let's try forward_amount exactly equal to balance and fwd_fee 0
+            //  1 TON Balance forward_amount:1 TON fwd_fee:0 verifying that minimal storage comes into play
+            //  Should fail with no actions
+    
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1"), notOwner.address, owner.address, toNano("1.1"));
+            expect(trxResult.transactions).toHaveTransaction({
+                from: owner.address,
+                to: itemNFT.address,
+                success: false,
+                exitCode: 402, // rest amount < min_storage_fee
+            });
+    
+            // Let's verify that storage fee was an error trigger by increasing balance by min_storage
+            // Expect success
+    
+            trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + 2n * minTonsForStorage, notOwner.address, owner.address, toNano("1.1"));
+            expect(trxResult.transactions).toHaveTransaction({
+                from: owner.address,
+                to: itemNFT.address,
+                success: true
+            });
+        });
+    
+        // TODO fix this test ( empty address need ) 
+        
+    
+        it("test transfer forward fee single", async () => {
+            // If transfer is successfull NFT supposed to send up to 2 messages
+            // 1)To the owner_address with forward_amount of coins
+            // 2)To the response_addr with forward_payload if response_addr is not addr_none
+            // Each of those messages costs fwd_fee
+            // In this case we test scenario where only single message required to be sent
+            // To do so resp_dst has be a valid address not equal to addr_none
+            let fwd_fee = toNano("0.01");
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), fwd_fee, notOwner.address, owner.address, toNano("0.1") - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
+            // expect(trxResult.transactions).toHaveTransaction({
+            //     from: owner.address,
+            //     to: itemNFT.address,
+            //     success: true,
+            // });
+        });
+    
+        it("test transfer forward fee double", async () => {
+            // If transfer is successfull NFT supposed to send up to 2 messages
+            // 1)To the owner_address with forward_amount of coins
+            // 2)To the response_addr with forward_payload if response_addr is not addr_none
+            // Each of those messages costs fwd_fee
+            // In this case we test scenario where both messages required to be sent but balance has funs only for single message
+            // To do so resp_dst has be a valid address not equal to addr_none
+            let fwd_fee = toNano("0.01");
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), fwd_fee, notOwner.address, owner.address, toNano("0.1") - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
+    
+            // expect(trxResult.transactions).toHaveTransaction({
+            //     from: owner.address,
+            //     to: itemNFT.address,   
+            //     success: false,
+            //     exitCode: 402, // invalid fees
+            // });
+        });
+    
+        it("test success no forward no response", async () => {
+            // forward_amount:0 resp_dst:addr_none
+            // On successfull execution only address change should occur.
+            // Expect no messages to be sent.
+    
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("0.1"), notOwner.address, emptyAddress, 0n);
         });
     });
 
-    it("Not owner should not be able to transfer ownership", async () => {
-        let trxResult = await sendTransfer(itemNFT, notOwner.getSender(), toNano("0.1"), notOwner.address, emptyAddress, 0n);
-        expect(trxResult.transactions).toHaveTransaction({
-            from: notOwner.address,
-            to: itemNFT.address,
-            success: false,
+    describe("Transfer Ownership Tests", () => {
+        it("Test ownership assigned", async () => {
+            let oldOwner = await itemNFT.getOwner();
+            expect(oldOwner).toEqualAddress(owner.address);
+            let trxRes = await sendTransfer(itemNFT, owner.getSender(), toNano("0.1"), notOwner.address, owner.address, 1n);
+    
+            // console.log(trxRes.transactions);
+            let newOwner = await itemNFT.getOwner();
+            expect(newOwner).toEqualAddress(notOwner.address);
+            expect(trxRes.transactions).toHaveTransaction({
+                from: owner.address,
+                to: itemNFT.address,
+                success: true,
+            });
         });
-    });
-
-    it("Transfer forward amount too much", async () => {
-        let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("0.1"), notOwner.address, owner.address, toNano("1"));
-        expect(trxResult.transactions).toHaveTransaction({
-            from: owner.address,
-            to: itemNFT.address,
-            success: false,
-            exitCode: 402, // invalid fees
+    
+        it("Not owner should not be able to transfer ownership", async () => {
+            let trxResult = await sendTransfer(itemNFT, notOwner.getSender(), toNano("0.1"), notOwner.address, emptyAddress, 0n);
+            expect(trxResult.transactions).toHaveTransaction({
+                from: notOwner.address,
+                to: itemNFT.address,
+                success: false,
+            });
         });
+
+        it("should transfer ownership correctly", async () => {});
     });
 
-    it("test transfer storage fee", async () => {
-        // in contract already 0.1 ton, so we need to forward amount 1.1 ton 
-
-        let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1"), notOwner.address, owner.address, toNano("1.1"));
-        expect(trxResult.transactions).toHaveTransaction({
-            from: owner.address,
-            to: itemNFT.address,
-            success: false,
-            exitCode: 402, // rest amount < min_storage_fee
-        });
-    });
-
-    it("test transfer forward fee double", async () => {
-        // If transfer is successfull NFT supposed to send up to 2 messages
-        // 1)To the owner_address with forward_amount of coins
-        // 2)To the response_addr with forward_payload if response_addr is not addr_none
-        // Each of those messages costs fwd_fee
-        // In this case we test scenario where both messages required to be sent but balance has funs only for single message
-        // To do so resp_dst has be a valid address not equal to addr_none
-        let fwd_fee = toNano("0.01");
-        let trxResult = await sendTransfer(itemNFT, owner.getSender(), fwd_fee, notOwner.address, owner.address, toNano("0.1") - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
-
-        // expect(trxResult.transactions).toHaveTransaction({
-        //     from: owner.address,
-        //     to: itemNFT.address,   
-        //     success: false,
-        //     exitCode: 402, // invalid fees
-        // });
-    });
     describe("NOT INITIALIZED TESTS", () => {
         const index: bigint = 100n;
         beforeEach(async () => {
@@ -302,27 +347,6 @@ describe("NFT Collection Contract", () => {
     let defaultCommonContent: Cell;
     let defaultCollectionContent: Cell;
     let royaltyParams: RoyaltyParams;
-
-
-    // const royaltyAsCell = (royaltyParams: RoyaltyParams): Cell => {
-    //     return beginCell().store(storeRoyaltyParams(royaltyParams)).endCell();
-    // };
-
-    // const sendReportRoyaltyParams = async (
-    //                 from: Sender,
-    //                 value: bigint,
-    //                 royaltyParams: RoyaltyParams,
-    //             ) => {
-    //                 let msg: ReportRoaltyParams = {
-    //                     $$type: 'ReportRoaltyParams',
-    //                     queryId: 0n,
-    //                     params: royaltyParams,
-    //                 };
-    
-    //                 return await collectionNFT.send(from, { value }, msg);
-    //             };
-
-    
 
     beforeEach(async () => {
             blockchain = await Blockchain.create();

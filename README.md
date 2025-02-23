@@ -63,6 +63,19 @@ And then
 ```shell 
 yarn test
 ```
+
+## Opportuinies 
+1) Use ^Struct in future versions of tact 
+2) Use opcode with deploying NFT 
+3) If we can check some conditionals after loadData(), in our case it is in NFTItem owner != null
+4) Using TupleBool 
+5) Either type in TACT
+6) With another way to use addr_none$00 in tact we can delete ? in responceDestination var  
+
+## Some bags ( or fithes :) ) 
+1) TACT can have only 2 references in root of c4, can't have more 
+2) in Init any `Int as uintX` or smth like that always saves as uint257, have to fix .ts files 
+
 ## License
 
 [MIT](./LICENSE)

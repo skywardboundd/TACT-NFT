@@ -8,8 +8,10 @@ asm fun emptyAddress(): Address { b{00} PUSHSLICE }
 contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     index: Int as uint64;
     collectionAddress: Address;
+    
+    // state init data don't have this parametres
     ownerAddress: Address? = null;
-    content: Cell? = null;
+    content: Cell?         = null;
 
     init(index: Int, collectionAddress: Address) {
         self.index = index;
@@ -36,8 +38,8 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
 
         nativeSendMessage(msg.endCell(), sendMode);
     }
-    //to ignore empty messages 
-    receive() {}
+    
+    receive() {} //to ignore empty messages 
 
     // we need it to accept deploy body from NFTCollection
     receive(msg: Slice){
@@ -67,19 +69,24 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
             restAmount -= (msg.forwardAmount + fwdFees);
         }
 
-        let needResponse: Bool = (msg.responseDestination.asSlice().preloadUint(2) != 0);
+        // when we load addr_none$00 in tact we got null 
+        let needResponse: Bool = (msg.responseDestination != null);
+
+        dump(needResponse);
 
         if (needResponse) {
             restAmount -= fwdFees;
         }
+
         nativeThrowUnless(self.InvalidFees, restAmount >= 0);
 
         if(msg.forwardAmount > 0){
             self.sendMsg(msg.newOwner, msg.forwardAmount, self.OwnershipAssigned, msg.queryId, beginCell().storeAddress(self.ownerAddress!!).storeSlice(msg.forwardPayload), 1);
         }
+        
         if(needResponse) { 
-            self.forceChain(msg.responseDestination);
-            self.sendMsg(msg.responseDestination, restAmount, self.Excesses, msg.queryId, beginCell(), 1);
+            self.forceChain(msg.responseDestination!!);
+            self.sendMsg(msg.responseDestination!!, restAmount, self.Excesses, msg.queryId, beginCell(), 1);
         }
         self.ownerAddress = msg.newOwner;
     }
@@ -93,7 +100,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
    
     get fun get_nft_data(): NFTData {
         return NFTData{
-            init: self.ownerAddress != null ? -1 : 0,
+            init: self.ownerAddress != null ? -1 : 0, // -1 is true
             index: self.index,
             collectionAddress: self.collectionAddress,
             ownerAddress: self.ownerAddress,

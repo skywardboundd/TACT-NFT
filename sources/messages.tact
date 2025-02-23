@@ -2,7 +2,7 @@
 message(0x5fcc3d14) Transfer{
     queryId: Int as uint64;
     newOwner: Address;
-    responseDestination: Address;
+    responseDestination: Address?; // can be addr_none$00 without storing MayBe bit 
     kind: Int as uint1;
     // customPayload: Cell as ; // we dont use in code thats why we can easily replace with Int as uint1 and always set it 0 (and no either in tact :)
     forwardAmount: Int as coins;

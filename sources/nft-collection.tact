@@ -5,13 +5,13 @@ import "./nft-item";
 
 struct DictDelete {
     dict: Cell;
-    item: Slice?;
     itemIndex: Int? as uint64;
+    item: Slice?;
     flag: Int as uint256;
 }
 
 // (cell, (int, slice, int)) ~udict::delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMIN" "NULLSWAPIFNOT2";
-asm fun deleteGetMin(dict: Cell, keySize: Int): DictDelete {DICTUREMMIN NULLSWAPIFNOT2 }
+asm(-> 0 2 1 3) fun deleteGetMin(dict: Cell, keySize: Int): DictDelete { DICTUREMMIN NULLSWAPIFNOT2 }
 
 contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
     owner: Address;
@@ -20,15 +20,15 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
     royaltyParams: RoyaltyParams;
 
     init(owner: Address, nextItemIndex: Int, collectionContent: Cell, royaltyParams: RoyaltyParams) {
-        self.owner = owner;
+        self.owner         = owner;
         self.nextItemIndex = nextItemIndex;
-        self.content = collectionContent;
+        self.content       = collectionContent;
         self.royaltyParams = royaltyParams;
     }
 
     fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell) {
         let stateInit: StateInit = initOf NFTItem(itemIndex, myAddress());
-        let nftAddress: Address = contractAddress(stateInit);
+        let nftAddress: Address  = contractAddress(stateInit);
 
         send(SendParameters{
             to: nftAddress,
@@ -37,8 +37,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
             code: stateInit.code,
             data: stateInit.data,
             mode: 1,
-            bounce: false,
-
+            bounce: false,            
         });
     }
 
@@ -72,8 +71,8 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
 
         let counter: Int = 0;
-        
         let curr: DictDelete = deleteGetMin(msg.deployList, 64);
+
         while (curr.flag != 0) {
             counter += 1;
             
@@ -86,7 +85,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
             }
 
             msg.deployList = curr.dict;
-            curr = deleteGetMin(msg.deployList, 64);
+            curr           = deleteGetMin(msg.deployList, 64);
         }
     }
 
