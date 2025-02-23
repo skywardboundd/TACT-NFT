@@ -594,7 +594,7 @@ export type Transfer = {
     $$type: 'Transfer';
     queryId: bigint;
     newOwner: Address;
-    responseDestination: Address;
+    responseDestination: Address | null;
     kind: bigint;
     forwardAmount: bigint;
     forwardPayload: Slice;

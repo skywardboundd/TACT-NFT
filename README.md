@@ -58,6 +58,8 @@ Test TACT contracts with /ouput/ folder, test func contracts with /output_func/ 
 2) [`NFTCollectionExtension.d.ts`](./sources/utils/NFTCollectionExtension.d.ts) 
 3) [`NFTItemExtension.d.ts`](./sources/utils/NFTItemExtension.d.ts) 
 
+P.S. or just replace `output/NFT` with `output_func/NFT` in all files except README
+
 And then 
 
 ```shell 

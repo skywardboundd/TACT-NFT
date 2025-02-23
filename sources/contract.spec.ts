@@ -20,7 +20,7 @@ import {
     NFTInitData,
     loadNFTInitData,
     ChangeOwner
-} from "./output/NFT_NFTCollection";
+} from "./output_func/NFT_NFTCollection";
 
 import {
     NFTItem,
@@ -28,7 +28,7 @@ import {
     NFTData,
     loadNFTData,
     storeNFTInitData,  
-}   from "./output/NFT_NFTItem";
+}   from "./output_func/NFT_NFTItem";
 
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
