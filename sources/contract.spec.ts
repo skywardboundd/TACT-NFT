@@ -20,7 +20,7 @@ import {
     NFTInitData,
     loadNFTInitData,
     ChangeOwner
-} from "./output/NFT_NFTCollection";
+} from "./output_func/NFT_NFTCollection";
 
 import {
     NFTItem,
@@ -28,7 +28,7 @@ import {
     NFTData,
     loadNFTData,
     storeNFTInitData,  
-}   from "./output/NFT_NFTItem";
+}   from "./output_func/NFT_NFTItem";
 
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
@@ -69,7 +69,7 @@ function loadGetterTupleNFTData(source: TupleItem[]): NFTData {
     let _collectionAddress = (source[2] as TupleItemSlice).cell.asSlice().loadAddress();
     let _ownerAddress = (source[3] as TupleItemSlice).cell.asSlice().loadAddress();
     let _content = (source[4] as TupleItemCell).cell;
-    return { $$type: 'NFTData' as const, init: _init, index: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
 }
 
 export const dictDeployNFTItem = {
@@ -163,7 +163,7 @@ describe("NFT Item Contract", () => {
         
         expect(staticData.init).toBe(-1n);
         expect(staticData.ownerAddress).toEqualAddress(owner.address);
-        expect(staticData.index).toBe(0n);
+        expect(staticData.itemIndex).toBe(0n);
         expect(staticData.content).toEqualCell(defaultContent);
     });
 
@@ -322,9 +322,9 @@ describe("NFT Item Contract", () => {
     });
 
     describe("NOT INITIALIZED TESTS", () => {
-        const index: bigint = 100n;
+        const itemIndex: bigint = 100n;
         beforeEach(async () => {
-            itemNFT = blockchain.openContract(await NFTItem.fromInit(index, owner.address));
+            itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, owner.address));
             let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().asSlice());
         });
 
@@ -332,7 +332,7 @@ describe("NFT Item Contract", () => {
             let staticData = await itemNFT.getGetNftData();
             expect(staticData.init).toBe(0n);
             expect(staticData.ownerAddress).toBeNull();
-            expect(staticData.index).toBe(index);
+            expect(staticData.itemIndex).toBe(itemIndex);
             expect(staticData.content).toBeNull();
         });
 
@@ -466,7 +466,7 @@ describe("NFT Collection Contract", () => {
             // checking in beforeEach
         });
         
-        const deployNFT = async (index: bigint, collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>): Promise<[SandboxContract<NFTItem>, any]>  => {
+        const deployNFT = async (itemIndex: bigint, collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>): Promise<[SandboxContract<NFTItem>, any]>  => {
             let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
             
             let initNFTBody: NFTInitData = {
@@ -478,12 +478,12 @@ describe("NFT Collection Contract", () => {
             let mintMsg: DeployNFT = {
                 $$type: 'DeployNFT',
                 queryId: 1n, 
-                itemIndex: index,
+                itemIndex: itemIndex,
                 amount: 10000000n,
                 initNFTBody: beginCell().store(storeNFTInitData(initNFTBody)).endCell(),
             };
             
-            itemNFT = blockchain.openContract(await NFTItem.fromInit(index, collectionNFT.address));
+            itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, collectionNFT.address));
             
             const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("0.1")}, mintMsg);
             return [itemNFT, trxResult];
@@ -498,7 +498,7 @@ describe("NFT Collection Contract", () => {
             
             expect(nftData.content).toEqualCell(content);
             expect(nftData.ownerAddress).toEqualAddress(owner.address);
-            expect(nftData.index).toBe(nextItemIndex);
+            expect(nftData.itemIndex).toBe(nextItemIndex);
             expect(nftData.collectionAddress).toEqualAddress(collectionNFT.address);
     
         });
@@ -537,7 +537,7 @@ describe("NFT Collection Contract", () => {
             
         });
     
-        it("shouldn't mint item index > nextItemIndex", async () => {
+        it("shouldn't mint item itemIndex > nextItemIndex", async () => {
             let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
             let [itemNFT, trx] = await deployNFT(nextItemIndex + 1n, collectionNFT, owner, owner);
             expect(trx.transactions).toHaveTransaction({
@@ -548,17 +548,17 @@ describe("NFT Collection Contract", () => {
             });
         });
     
-        it("test get nft by index", async () => {
+        it("test get nft by itemIndex", async () => {
             let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
             
-            // deploy new nft to get index 
+            // deploy new nft to get itemIndex 
             let [itemNFT, trx] = await deployNFT(nextItemIndex, collectionNFT, owner, owner);
             let nftAddress = await collectionNFT.getGetNftAddressByIndex(nextItemIndex);
             let newNFT = blockchain.getContract(nftAddress);
             let getData = await (await newNFT).get('get_nft_data');
             let dataNFT = loadGetterTupleNFTData(getData.stack);
             
-            expect(dataNFT.index).toBe(nextItemIndex);
+            expect(dataNFT.itemIndex).toBe(nextItemIndex);
             expect(dataNFT.collectionAddress).toEqualAddress(collectionNFT.address);
         });
     });
@@ -605,7 +605,7 @@ describe("NFT Collection Contract", () => {
             itemNFT = blockchain.openContract(await NFTItem.fromInit(9n, collectionNFT.address));
             
             // it was deployed, that's why we can get it
-            expect(await itemNFT.getGetNftData()).toHaveProperty('index', 9n);
+            expect(await itemNFT.getGetNftData()).toHaveProperty('itemIndex', 9n);
         });
     
         it("Shouldn't batch mint more than 250 items", async () => { 

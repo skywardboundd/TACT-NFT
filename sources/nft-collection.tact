@@ -1,5 +1,5 @@
 import "@stdlib/deploy";
-import "./op-codes";
+import "./constants";
 import "./messages";
 import "./nft-item";
 
@@ -36,8 +36,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
             body: initNFTBody,
             code: stateInit.code,
             data: stateInit.data,
-            mode: 1,
-            bounce: false,            
+            mode: 1     
         });
     }
 
@@ -45,13 +44,13 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
     
     receive(msg: GetRoyaltyParams) {
         send(SendParameters{
+            bounce: false,
             to: sender(),
             value: 0,
-            bounce: false,
             body: ReportRoyaltyParams{
-                queryId: msg.queryId,
-                params: self.royaltyParams,
-            }.toCell(),
+                      queryId: msg.queryId,
+                      params:  self.royaltyParams,
+                    }.toCell(),
             mode: 64 
         });
     }
@@ -70,7 +69,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
     receive(msg: BatchDeploy) {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
 
-        let counter: Int = 0;
+        let counter: Int     = 0;
         let curr: DictDelete = deleteGetMin(msg.deployList, 64);
 
         while (curr.flag != 0) {

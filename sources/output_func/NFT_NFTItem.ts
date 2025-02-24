@@ -717,7 +717,7 @@ function dictValueParserGetStaticData(): DictionaryValue<GetStaticData> {
 export type NFTData = {
     $$type: 'NFTData';
     init: bigint;
-    index: bigint;
+    itemIndex: bigint;
     collectionAddress: Address;
     ownerAddress: Address | null;
     content: Cell | null;
@@ -727,7 +727,7 @@ export function storeNFTData(src: NFTData) {
     return (builder: Builder) => {
         const b_0 = builder;
         b_0.storeInt(src.init, 257);
-        b_0.storeUint(src.index, 64);
+        b_0.storeUint(src.itemIndex, 64);
         b_0.storeAddress(src.collectionAddress);
         b_0.storeAddress(src.ownerAddress);
         if (src.content !== null && src.content !== undefined) { b_0.storeBit(true).storeRef(src.content); } else { b_0.storeBit(false); }
@@ -741,7 +741,7 @@ export function loadNFTData(slice: Slice) {
     const _collectionAddress = sc_0.loadAddress();
     const _ownerAddress = sc_0.loadMaybeAddress();
     const _content = sc_0.loadBit() ? sc_0.loadRef() : null;
-    return { $$type: 'NFTData' as const, init: _init, index: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
 }
 
 function loadTupleNFTData(source: TupleReader) {
@@ -750,7 +750,7 @@ function loadTupleNFTData(source: TupleReader) {
     const _collectionAddress = source.readAddress();
     const _ownerAddress = source.readAddressOpt();
     const _content = source.readCellOpt();
-    return { $$type: 'NFTData' as const, init: _init, index: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
 }
 
 function loadGetterTupleNFTData(source: TupleReader) {
@@ -759,13 +759,13 @@ function loadGetterTupleNFTData(source: TupleReader) {
     const _collectionAddress = source.readAddress();
     const _ownerAddress = source.readAddressOpt();
     const _content = source.readCellOpt();
-    return { $$type: 'NFTData' as const, init: _init, index: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
 }
 
 function storeTupleNFTData(source: NFTData) {
     const builder = new TupleBuilder();
     builder.writeNumber(source.init);
-    builder.writeNumber(source.index);
+    builder.writeNumber(source.itemIndex);
     builder.writeAddress(source.collectionAddress);
     builder.writeAddress(source.ownerAddress);
     builder.writeCell(source.content);
@@ -1221,7 +1221,7 @@ function dictValueParserReportRoyaltyParams(): DictionaryValue<ReportRoyaltyPara
 
 export type NFTItem$Data = {
     $$type: 'NFTItem$Data';
-    index: bigint;
+    itemIndex: bigint;
     collectionAddress: Address;
     ownerAddress: Address | null;
     content: Cell | null;
@@ -1230,7 +1230,7 @@ export type NFTItem$Data = {
 export function storeNFTItem$Data(src: NFTItem$Data) {
     return (builder: Builder) => {
         const b_0 = builder;
-        b_0.storeUint(src.index, 64);
+        b_0.storeUint(src.itemIndex, 64);
         b_0.storeAddress(src.collectionAddress);
         b_0.storeAddress(src.ownerAddress);
         if (src.content !== null && src.content !== undefined) { b_0.storeBit(true).storeRef(src.content); } else { b_0.storeBit(false); }
@@ -1243,7 +1243,7 @@ export function loadNFTItem$Data(slice: Slice) {
     const _collectionAddress = sc_0.loadAddress();
     const _ownerAddress = sc_0.loadMaybeAddress();
     const _content = sc_0.loadBit() ? sc_0.loadRef() : null;
-    return { $$type: 'NFTItem$Data' as const, index: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
 }
 
 function loadTupleNFTItem$Data(source: TupleReader) {
@@ -1251,7 +1251,7 @@ function loadTupleNFTItem$Data(source: TupleReader) {
     const _collectionAddress = source.readAddress();
     const _ownerAddress = source.readAddressOpt();
     const _content = source.readCellOpt();
-    return { $$type: 'NFTItem$Data' as const, index: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
 }
 
 function loadGetterTupleNFTItem$Data(source: TupleReader) {
@@ -1259,12 +1259,12 @@ function loadGetterTupleNFTItem$Data(source: TupleReader) {
     const _collectionAddress = source.readAddress();
     const _ownerAddress = source.readAddressOpt();
     const _content = source.readCellOpt();
-    return { $$type: 'NFTItem$Data' as const, index: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
 }
 
 function storeTupleNFTItem$Data(source: NFTItem$Data) {
     const builder = new TupleBuilder();
-    builder.writeNumber(source.index);
+    builder.writeNumber(source.itemIndex);
     builder.writeAddress(source.collectionAddress);
     builder.writeAddress(source.ownerAddress);
     builder.writeCell(source.content);
@@ -1284,22 +1284,22 @@ function dictValueParserNFTItem$Data(): DictionaryValue<NFTItem$Data> {
 
  type NFTItem_init_args = {
     $$type: 'NFTItem_init_args';
-    index: bigint;
+    itemIndex: bigint;
     collectionAddress: Address;
 }
 
 function initNFTItem_init_args(src: NFTItem_init_args) {
     return (builder: Builder) => {
         const b_0 = builder;
-        b_0.storeInt(src.index, 64);
+        b_0.storeInt(src.itemIndex, 64);
         b_0.storeAddress(src.collectionAddress);
     };
 }
 
-async function NFTItem_init(index: bigint, collectionAddress: Address) {
+async function NFTItem_init(itemIndex: bigint, collectionAddress: Address) {
     const __code = Cell.fromBase64('te6cckECDgEAAdwAART/APSkE/S88sgLAQIBYgIDAgLOBAUACaEfn+AFAgEgBgcCASAMDQLPDIhxwCSXwPg0NMDAXGwkl8D4PpA+kAx+gAxcdch+gAx+gAwc6m0APACBLOOFDBsIjRSMscF8uGVAfpA1DAQI/AD4AbTH9M/ghBfzD0UUjC64wIwNDQ1NYIQL8smohK64wJfBIQP8vCAICQARPpEMHC68uFNgAqwyEDdeMkATUTXHBfLhkfpAIfAB+kDSADH6ACDXScIA8uLEggr68IAboSGUUxWgod4i1wsBwwAgkgahkTbiIML/8uGSIZQQKjdb4w0CkzAyNOMNVQLwAwoLAHJwghCLdxc1BcjL/1AEzxYQJIBAcIAQyMsFUAfPFlAF+gIVy2oSyx/LPyJus5RYzxcBkTLiAckB+wAAfIIQBRONkchQCc8WUAvPFnEkSRRURqBwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7ABBHAGom8AGCENUydtsQN0QAbXFwgBDIywVQB88WUAX6AhXLahLLH8s/Im6zlFjPFwGRMuIByQH7AAA7O1E0NM/+kAg10nCAJp/AfpA1DAQJBAj4DBwWW1tgAB0A8jLP1jPFgHPFszJ7VSAhpPNg');
     const builder = beginCell();
-    initNFTItem_init_args({ $$type: 'NFTItem_init_args', index, collectionAddress })(builder);
+    initNFTItem_init_args({ $$type: 'NFTItem_init_args', itemIndex, collectionAddress })(builder);
     const __data = builder.endCell();
     return { code: __code, data: __data };
 }
@@ -1354,7 +1354,7 @@ const NFTItem_types: ABIType[] = [
     {"name":"FactoryDeploy","header":1829761339,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"cashback","type":{"kind":"simple","type":"address","optional":false}}]},
     {"name":"Transfer","header":1607220500,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"newOwner","type":{"kind":"simple","type":"address","optional":false}},{"name":"responseDestination","type":{"kind":"simple","type":"address","optional":false}},{"name":"kind","type":{"kind":"simple","type":"uint","optional":false,"format":1}},{"name":"forwardAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"forwardPayload","type":{"kind":"simple","type":"slice","optional":false,"format":"remainder"}}]},
     {"name":"GetStaticData","header":801842850,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
-    {"name":"NFTData","header":null,"fields":[{"name":"init","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"index","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
+    {"name":"NFTData","header":null,"fields":[{"name":"init","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
     {"name":"NFTInitData","header":null,"fields":[{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"CollectionData","header":null,"fields":[{"name":"nextItemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionContent","type":{"kind":"simple","type":"cell","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":false}}]},
     {"name":"RoyaltyParams","header":null,"fields":[{"name":"nominator","type":{"kind":"simple","type":"uint","optional":false,"format":16}},{"name":"dominator","type":{"kind":"simple","type":"uint","optional":false,"format":16}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}}]},
@@ -1363,7 +1363,7 @@ const NFTItem_types: ABIType[] = [
     {"name":"BatchDeploy","header":2,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"deployList","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"ChangeOwner","header":3,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"newOwner","type":{"kind":"simple","type":"address","optional":false}}]},
     {"name":"ReportRoyaltyParams","header":2831876269,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"params","type":{"kind":"simple","type":"RoyaltyParams","optional":false}}]},
-    {"name":"NFTItem$Data","header":null,"fields":[{"name":"index","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
+    {"name":"NFTItem$Data","header":null,"fields":[{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
 ]
 
 const NFTItem_getters: ABIGetter[] = [
@@ -1383,12 +1383,12 @@ const NFTItem_receivers: ABIReceiver[] = [
 
 export class NFTItem implements Contract {
     
-    static async init(index: bigint, collectionAddress: Address) {
-        return await NFTItem_init(index, collectionAddress);
+    static async init(itemIndex: bigint, collectionAddress: Address) {
+        return await NFTItem_init(itemIndex, collectionAddress);
     }
     
-    static async fromInit(index: bigint, collectionAddress: Address) {
-        const __gen_init = await NFTItem_init(index, collectionAddress);
+    static async fromInit(itemIndex: bigint, collectionAddress: Address) {
+        const __gen_init = await NFTItem_init(itemIndex, collectionAddress);
         const address = contractAddress(0, __gen_init);
         return new NFTItem(address, __gen_init);
     }

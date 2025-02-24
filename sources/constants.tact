@@ -14,7 +14,7 @@ trait OpCodes {
 }
 
 trait WalletExitcodes {
-    const IncrorrectDeployer: Int = 405;
+    const IncorrectDeployer: Int = 405;
     const IncorrectIndex: Int = 402;
     const IncorrectAmount: Int = 399;
     const IncorrectIndexes: Int = 403;
