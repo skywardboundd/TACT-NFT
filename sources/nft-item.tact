@@ -56,14 +56,12 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
 
     receive(msg: Transfer) {
         // not init 
-        nativeThrowUnless(self.IncrorrectDeployer, self.ownerAddress != null);
+        nativeThrowUnless(self.NotInit, self.ownerAddress != null);
         
         nativeThrowUnless(self.IncorrectSender, sender() == self.ownerAddress);
         nativeThrowUnless(708, msg.forwardPayload.bits() >= 1);
 
         let fwdFees: Int = context().readForwardFee();
-
-        dump(fwdFees);
         
         self.forceChain(msg.newOwner);
 
@@ -95,7 +93,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
 
     receive(msg: GetStaticData) {
         // uninit
-        nativeThrowUnless(self.IncrorrectDeployer, self.ownerAddress != null);
+        nativeThrowUnless(self.NotInit, self.ownerAddress != null);
 
         self.sendMsg(sender(), 0, self.ReportStaticData, msg.queryId, beginCell().storeUint(self.index, 256).storeAddress(self.collectionAddress), 64);
     }

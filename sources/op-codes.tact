@@ -11,7 +11,6 @@ trait OpCodes {
     const EditContent: Int = 0x1a0b9d51;
     const TransferEditorship: Int = 0x1c04412a;
     const EditorshipAssigned: Int = 0x511a4463; 
-
 }
 
 trait WalletExitcodes {
@@ -23,7 +22,8 @@ trait WalletExitcodes {
     const IncorrectSender: Int = 401;
     const IncorrectBalanceAfrerSend: Int = 706;
     const InvalidDestinationWorkchain: Int = 333;
-    const InvalidData: Int = 130; // not handled
+    const InvalidData: Int = 65535; // not handled
+    const NotInit: Int = 9;
     const InvalidFees: Int = 402;
 }
 
