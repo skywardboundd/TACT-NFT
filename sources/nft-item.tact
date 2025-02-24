@@ -9,7 +9,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     index: Int as uint64;
     collectionAddress: Address;
     
-    // state init data don't have this parametres
+    // state init data don't have this parameters
     ownerAddress: Address? = null;
     content: Cell?         = null;
 
@@ -62,17 +62,19 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
         nativeThrowUnless(708, msg.forwardPayload.bits() >= 1);
 
         let fwdFees: Int = context().readForwardFee();
+
+        dump(fwdFees);
         
         self.forceChain(msg.newOwner);
+
         let restAmount: Int = myBalance() - self.minTonsForStorage;
+
         if (msg.forwardAmount > 0) {
             restAmount -= (msg.forwardAmount + fwdFees);
         }
 
         // when we load addr_none$00 in tact we got null 
         let needResponse: Bool = (msg.responseDestination != null);
-
-        dump(needResponse);
 
         if (needResponse) {
             restAmount -= fwdFees;

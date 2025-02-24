@@ -25,7 +25,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
         self.content       = collectionContent;
         self.royaltyParams = royaltyParams;
     }
-
+    
     fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell) {
         let stateInit: StateInit = initOf NFTItem(itemIndex, myAddress());
         let nftAddress: Address  = contractAddress(stateInit);
@@ -48,7 +48,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
             to: sender(),
             value: 0,
             bounce: false,
-            body: ReportRoaltyParams{
+            body: ReportRoyaltyParams{
                 queryId: msg.queryId,
                 params: self.royaltyParams,
             }.toCell(),

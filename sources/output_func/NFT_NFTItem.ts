@@ -1166,13 +1166,13 @@ function dictValueParserChangeOwner(): DictionaryValue<ChangeOwner> {
     }
 }
 
-export type ReportRoaltyParams = {
-    $$type: 'ReportRoaltyParams';
+export type ReportRoyaltyParams = {
+    $$type: 'ReportRoyaltyParams';
     queryId: bigint;
     params: RoyaltyParams;
 }
 
-export function storeReportRoaltyParams(src: ReportRoaltyParams) {
+export function storeReportRoyaltyParams(src: ReportRoyaltyParams) {
     return (builder: Builder) => {
         const b_0 = builder;
         b_0.storeUint(2831876269, 32);
@@ -1181,40 +1181,40 @@ export function storeReportRoaltyParams(src: ReportRoaltyParams) {
     };
 }
 
-export function loadReportRoaltyParams(slice: Slice) {
+export function loadReportRoyaltyParams(slice: Slice) {
     const sc_0 = slice;
     if (sc_0.loadUint(32) !== 2831876269) { throw Error('Invalid prefix'); }
     const _queryId = sc_0.loadUintBig(64);
     const _params = loadRoyaltyParams(sc_0);
-    return { $$type: 'ReportRoaltyParams' as const, queryId: _queryId, params: _params };
+    return { $$type: 'ReportRoyaltyParams' as const, queryId: _queryId, params: _params };
 }
 
-function loadTupleReportRoaltyParams(source: TupleReader) {
+function loadTupleReportRoyaltyParams(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _params = loadTupleRoyaltyParams(source);
-    return { $$type: 'ReportRoaltyParams' as const, queryId: _queryId, params: _params };
+    return { $$type: 'ReportRoyaltyParams' as const, queryId: _queryId, params: _params };
 }
 
-function loadGetterTupleReportRoaltyParams(source: TupleReader) {
+function loadGetterTupleReportRoyaltyParams(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _params = loadGetterTupleRoyaltyParams(source);
-    return { $$type: 'ReportRoaltyParams' as const, queryId: _queryId, params: _params };
+    return { $$type: 'ReportRoyaltyParams' as const, queryId: _queryId, params: _params };
 }
 
-function storeTupleReportRoaltyParams(source: ReportRoaltyParams) {
+function storeTupleReportRoyaltyParams(source: ReportRoyaltyParams) {
     const builder = new TupleBuilder();
     builder.writeNumber(source.queryId);
     builder.writeTuple(storeTupleRoyaltyParams(source.params));
     return builder.build();
 }
 
-function dictValueParserReportRoaltyParams(): DictionaryValue<ReportRoaltyParams> {
+function dictValueParserReportRoyaltyParams(): DictionaryValue<ReportRoyaltyParams> {
     return {
         serialize: (src, builder) => {
-            builder.storeRef(beginCell().store(storeReportRoaltyParams(src)).endCell());
+            builder.storeRef(beginCell().store(storeReportRoyaltyParams(src)).endCell());
         },
         parse: (src) => {
-            return loadReportRoaltyParams(src.loadRef().beginParse());
+            return loadReportRoyaltyParams(src.loadRef().beginParse());
         }
     }
 }
@@ -1362,7 +1362,7 @@ const NFTItem_types: ABIType[] = [
     {"name":"DeployNFT","header":1,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"amount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"initNFTBody","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"BatchDeploy","header":2,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"deployList","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"ChangeOwner","header":3,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"newOwner","type":{"kind":"simple","type":"address","optional":false}}]},
-    {"name":"ReportRoaltyParams","header":2831876269,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"params","type":{"kind":"simple","type":"RoyaltyParams","optional":false}}]},
+    {"name":"ReportRoyaltyParams","header":2831876269,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"params","type":{"kind":"simple","type":"RoyaltyParams","optional":false}}]},
     {"name":"NFTItem$Data","header":null,"fields":[{"name":"index","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
 ]
 

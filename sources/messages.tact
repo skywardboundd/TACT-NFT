@@ -59,7 +59,7 @@ message(3) ChangeOwner {
     newOwner: Address;
 }
 
-message(0xa8cb00ad) ReportRoaltyParams {
+message(0xa8cb00ad) ReportRoyaltyParams {
     queryId: Int as uint64;
     params: RoyaltyParams;
 } 
