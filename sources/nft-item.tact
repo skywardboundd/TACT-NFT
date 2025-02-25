@@ -10,7 +10,7 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
 
     // state init data don't have this parameters
     owner: Address? = null;
-    content: Cell?         = null;
+    content: Cell?  = null;
 
     init(itemIndex: Int, collectionAddress: Address) {
         self.itemIndex         = itemIndex;
@@ -41,7 +41,7 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
 
     // we need it to accept deploy body from NFTCollection
     receive(msg: Slice){
-        // we need this type only in init
+        // we need this message only in init, if (self.owner != null) ==> we are already init
         nativeThrowUnless(self.InvalidData, self.owner == null);
 
         let owner: Address = msg.loadAddress();
