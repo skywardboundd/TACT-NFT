@@ -46,7 +46,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes, OwnableTrans
     }
 
     receive(msg: DeployNFT) {
-        self.requireOwner();
+        nativeThrowUnless(self.IncorrectSender, self.owner == sender());
         nativeThrowUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
 
         let initNFTBody = InitNFTBody{
@@ -67,7 +67,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes, OwnableTrans
 
         nativeReserve(0, 4);
 
-        let counter: Int          = 0;
+        let counter: Int           = 0;
         let curr: InitNFTBodyDict? = msg.deployList.get(counter);
         
         while (curr != null) {

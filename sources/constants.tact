@@ -24,6 +24,7 @@ trait WalletExitcodes {
     const InvalidDestinationWorkchain: Int = 333;
     const InvalidData: Int = 65535; // not handled
     const NotInit: Int = 9;
+    const AlreadyInit: Int = 10;
     const InvalidFees: Int = 402;
 }
 

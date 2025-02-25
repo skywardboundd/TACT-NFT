@@ -7,7 +7,6 @@ asm fun emptyAddress(): Address { b{00} PUSHSLICE }
 contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     itemIndex: Int as uint64;
     collectionAddress: Address;
-    stopped: Bool = false;
     // state init data don't have this parameters
     owner: Address? = null;
     content: Cell?         = null;
@@ -42,6 +41,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     // we need it to accept deploy body from NFTCollection
     receive(msg: InitNFTBody){
         nativeThrowUnless(self.IncorrectDeployer, sender() == self.collectionAddress);
+        nativeThrowUnless(self.AlreadyInit, self.owner == null);
         self.owner   = msg.owner;
         self.content = msg.content;
 
@@ -50,8 +50,8 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
 
     receive(msg: Transfer) {
         // not init 
-        nativeThrowUnless(self.IncorrectSender, self.owner!! == sender());
         nativeThrowUnless(self.NotInit, self.owner != null);
+        nativeThrowUnless(self.IncorrectSender, self.owner!! == sender());
         
         nativeThrowUnless(708, msg.forwardPayload.bits() >= 1);
         self.forceChain(msg.newOwner);

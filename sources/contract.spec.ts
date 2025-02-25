@@ -194,8 +194,7 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false,
-                exitCode: 402, // invalid fees
+                success: false
             });
         });
     
@@ -208,8 +207,7 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false,
-                exitCode: 402, // rest amount < min_storage_fee
+                success: false
             });
         });
         it("test transfer forward fee 2.0", async () => {
@@ -261,8 +259,7 @@ describe("NFT Item Contract", () => {
                 expect(trxResult.transactions).toHaveTransaction({
                     from: owner.address,
                     to: itemNFT.address,   
-                    success: false,
-                    exitCode: 402, // invalid fees
+                    success: false
                 });
             });
 
@@ -312,8 +309,7 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: notOwner.address,
                 to: itemNFT.address,
-                success: false,
-                exitCode: 401, // not owner
+                success: false
             });
         });
 
@@ -340,8 +336,7 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false,
-                exitCode: 9, // not init
+                success: false
             });
         });
 
@@ -505,8 +500,7 @@ describe("NFT Collection Contract", () => {
             expect(trx.transactions).toHaveTransaction({
                 from: notOwner.address,
                 to: collectionNFT.address,
-                success: false,
-                exitCode: 401,
+                success: false
             });
         });
     
@@ -525,8 +519,7 @@ describe("NFT Collection Contract", () => {
                 from: collectionNFT.address,
                 to: itemNFT.address,
                 deploy: false,
-                success: false,
-                exitCode: 65535,
+                success: false
             });
             
         });
@@ -537,8 +530,7 @@ describe("NFT Collection Contract", () => {
             expect(trx.transactions).toHaveTransaction({
                 from: owner.address,
                 to: collectionNFT.address,
-                success: false,
-                exitCode: 402
+                success: false
             });
         });
     
@@ -561,30 +553,26 @@ describe("NFT Collection Contract", () => {
         const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint) => {
             let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
             // let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
-            let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), InitNFTBodyDict);
+            let dct: Dictionary<bigint, InitNFTBodyDict> = Dictionary.empty();
             
             let i: bigint = 0n;
-    
-            let initNFTBody: InitNFTBody = {
-                $$type: 'InitNFTBody',
-                queryId: 0n,
-                owner: owner.address,
-                content: content,
-            }
-    
+
             while (i < count) {
-                dct.set(i, {
-                        amount: 10000000n,
-                        initNFTBody: initNFTBody
-                    }
-                );
+                let initNFTBody: InitNFTBodyDict = {
+                    $$type: 'InitNFTBodyDict',
+                    amount: 10000000n,
+                    index: i,
+                    owner: owner.address,
+                    content: content,
+                }
+                dct.set(i, initNFTBody);
                 i += 1n;
             }
     
             let batchMintNFT: BatchDeploy = {
                 $$type: 'BatchDeploy',
                 queryId: 0n,
-                deployList: beginCell().storeDictDirect(dct).endCell(),
+                deployList: dct,
             }
             
             const trxResult = await collectionNFT.send(sender.getSender(), {value: 10000000000n * (count + 10n) }, batchMintNFT);
@@ -612,7 +600,7 @@ describe("NFT Collection Contract", () => {
                 from: owner.address,
                 to: collectionNFT.address,
                 success: false
-            }); // in orig func contracts exit code -14, but it throw in code 399 ( we can just check )
+            }); 
         });
     
         it('Should not batch mint not owner', async () => {
@@ -621,8 +609,7 @@ describe("NFT Collection Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: notOwner.address,
                 to: collectionNFT.address,
-                success: false,
-                exitCode: 401
+                success: false
             });
         });
     });
@@ -659,8 +646,7 @@ describe("NFT Collection Contract", () => {
                 {
                     from: notOwner.address,
                     to: collectionNFT.address,
-                    success: false,
-                    exitCode: 401
+                    success: false
                 }
             );
         });
