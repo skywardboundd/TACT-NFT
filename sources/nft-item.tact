@@ -1,11 +1,10 @@
-import "@stdlib/deploy";
 import "./constants";
 import "./messages";
 
 
 asm fun emptyAddress(): Address { b{00} PUSHSLICE }
 
-contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
+contract NFTItem with ExitCodes, GasConstants, OpCodes {
     itemIndex: Int as uint64;
     collectionAddress: Address;
 
@@ -57,7 +56,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
         // not init 
         nativeThrowUnless(self.NotInit, self.owner != null);
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
-        nativeThrowUnless(708, msg.forwardPayload.bits() >= 1);
+        nativeThrowUnless(self.IncorrectForwardPayload, msg.forwardPayload.bits() >= 1);
         self.forceChain(msg.newOwner);
 
         let fwdFees: Int = context().readForwardFee();

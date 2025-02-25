@@ -1,4 +1,3 @@
-import "@stdlib/deploy";
 import "./constants";
 import "./messages";
 import "./nft-item";
@@ -13,7 +12,7 @@ struct DictDelete {
 // (cell, (int, slice, int)) ~udict::delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMIN" "NULLSWAPIFNOT2";
 asm(-> 0 2 1 3) fun deleteGetMin(dict: Cell, keySize: Int): DictDelete { DICTUREMMIN NULLSWAPIFNOT2 }
 
-contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
+contract NFTCollection with ExitCodes, GasConstants {
     owner: Address;
     nextItemIndex: Int as uint64;
     content: Cell;
@@ -51,7 +50,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
                       queryId: msg.queryId,
                       params:  self.royaltyParams,
                     }.toCell(),
-            mode: 64 
+            mode: SendRemainingValue 
         });
     }
 
