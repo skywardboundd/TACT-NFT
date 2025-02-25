@@ -13,7 +13,7 @@ trait OpCodes {
     const EditorshipAssigned: Int = 0x511a4463; 
 }
 
-trait WalletExitcodes {
+trait ExitCodes {
     const IncorrectDeployer: Int = 405;
     const IncorrectIndex: Int = 402;
     const IncorrectAmount: Int = 399;

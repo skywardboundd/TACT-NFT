@@ -3,7 +3,7 @@ import "./constants";
 import "./messages";
 import "./nft-item";
 
-contract NFTCollection with WalletExitcodes, GasConstants, OpCodes, OwnableTransferable {
+contract NFTCollection with ExitCodes, GasConstants, OpCodes {
     owner: Address;
     nextItemIndex: Int as uint64;
     content: Cell;

@@ -4,7 +4,7 @@ import "./messages";
 
 asm fun emptyAddress(): Address { b{00} PUSHSLICE }
 
-contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
+contract NFTItem with ExitCodes, GasConstants, OpCodes {
     itemIndex: Int as uint64;
     collectionAddress: Address;
     // state init data don't have this parameters
