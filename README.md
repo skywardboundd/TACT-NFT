@@ -55,7 +55,7 @@ then
 yarn deploy
 ```
 
-To deploy NFT Item follow some instructions in [`contract.deploy_nft.ts`](./sources/contract.deploy_nft.ts) and define in `.env`
+To deploy NFT Item follow some instructions in [`contract.deploy_nft.ts`](./sources/contract.nft_deploy.ts) and define in `.env`
 - `COLLECTION_ADDRESS`
 - `NEXT_ITEM_INDEX`
 
@@ -63,6 +63,14 @@ then
 ```shell 
 yarn deploynft
 ```
+
+To batch NFT follow instructions in [`contract.deploy_nft.ts`](./sources/contract.batch_nft_deploy.ts)
+
+then 
+```shell
+yarn batchdeploynft
+```
+
 
 ## Testing
 

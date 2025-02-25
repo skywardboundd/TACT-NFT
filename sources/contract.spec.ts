@@ -52,18 +52,18 @@ const sendTransfer = async (
     from: Sender,
     value: bigint,
     newOwner: Address,
-    responceDestination: Address | null,
+    responseDestination: Address | null,
     forwardAmount: bigint,
-    fornwardPayload: Slice = beginCell().storeUint(0, 1).asSlice(),
+    forwardPayload: Slice = beginCell().storeUint(0, 1).asSlice(),
 ) => {
     let msg: Transfer = {
         $$type: 'Transfer',
         queryId: 0n,
         newOwner: newOwner,
-        responseDestination: responceDestination,
+        responseDestination: responseDestination,
         kind: 0n,
         forwardAmount: forwardAmount,
-        forwardPayload: fornwardPayload,
+        forwardPayload: forwardPayload,
     };
 
     return await itemNFT.send(from, { value }, msg);
@@ -167,10 +167,8 @@ describe("NFT Item Contract", () => {
             to: itemNFT.address,
             success: true,
         });
-
     });
     
-    // TODO fix this tests ( empty address need ) 
     describe("Transfer ownership reject cases", () => {
         let balance: bigint;
         let fwdFee = 601206n;             // just run test & dump it 
@@ -281,7 +279,6 @@ describe("NFT Item Contract", () => {
             expect(oldOwner).toEqualAddress(owner.address);
             let trxRes = await sendTransfer(itemNFT, owner.getSender(), toNano("0.1"), notOwner.address, owner.address, 1n);
     
-            // console.log(trxRes.transactions);
             let newOwner = await itemNFT.getOwner();
             expect(newOwner).toEqualAddress(notOwner.address);
             expect(trxRes.transactions).toHaveTransaction({
@@ -309,8 +306,6 @@ describe("NFT Item Contract", () => {
                 exitCode: 401, // not owner
             });
         });
-
-        it("should transfer ownership correctly", async () => {});
     });
 
     describe("NOT INITIALIZED TESTS", () => {
@@ -339,7 +334,13 @@ describe("NFT Item Contract", () => {
         });
 
         it("should not get static data message", async () => {
-            
+            let trxResult = await messageGetStaticData(owner, itemNFT);
+            expect(trxResult.transactions).toHaveTransaction({
+                from: owner.address,
+                to: itemNFT.address,
+                success: false,
+                exitCode: 9, // not init
+            });
         });
     });
 });
@@ -354,6 +355,7 @@ NFTCollection.prototype.getOwner = async function (this: NFTCollection, provider
     let res = await this.getGetCollectionData(provider);
     return res.owner;
 };
+
 describe("NFT Collection Contract", () => {
     let blockchain: Blockchain;
     let collectionNFT: SandboxContract<NFTCollection>;
@@ -518,7 +520,6 @@ describe("NFT Collection Contract", () => {
     
             let [itemNFT, trx] = await deployNFT(0n, collectionNFT, owner, owner);
             
-            // console.log(trx.transactions);
             expect(trx.transactions).toHaveTransaction({
                 from: collectionNFT.address,
                 to: itemNFT.address,
@@ -610,7 +611,7 @@ describe("NFT Collection Contract", () => {
         
         
         it("Should batch mint correctly", async () => { 
-            let count = 100n;
+            let count = 50n;
             let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, count);
     
             expect(trxResult.transactions).toHaveTransaction({
@@ -624,7 +625,7 @@ describe("NFT Collection Contract", () => {
             expect(await itemNFT.getGetNftData()).toHaveProperty('itemIndex', count - 1n);
         });
     
-        // this test doesn't make sense because we can only mint 130 in func & 72 on tact 1.5.4 ( 128 in tact 1.6 dev vers ) 
+        // this test doesn't make sense because we can only mint 130 in func & 72 on tact 1.5.3 ( 128 in tact 1.6 dev vers ) 
         it("Shouldn't batch mint more than 250 items", async () => {
             let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 260n);
             
@@ -657,13 +658,11 @@ describe("NFT Collection Contract", () => {
     
             const trxResult = await collectionNFT.send(owner.getSender(), {value: 100000000n }, changeOwnerMsg);
     
-            expect(trxResult.transactions).toHaveTransaction(
-                {
+            expect(trxResult.transactions).toHaveTransaction({
                     from: owner.address,
                     to: collectionNFT.address,
                     success: true,
-                }
-            );
+            });
             expect(await collectionNFT.getOwner()).toEqualAddress(notOwner.address);
         });
         it("Not owner should not be able to transfer ownership", async () => { 

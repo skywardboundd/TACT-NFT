@@ -17,8 +17,9 @@ dotenv.config();
     (// - comments out the line, so you can switch between networks)
     (testnet is chosen by default, if you are not familiar with it, read https://tonkeeper.helpscoutdocs.com/article/100-how-switch-to-the-testnet)
     4. Change content according to standard https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md 
-    5. Run "yarn build" to compile the contract.
-    6. Run this script by "yarn deploy"
+    5. Load in code your owner list with amounts 
+    6. Run "yarn build" to compile the contract.
+    7. Run this script by "yarn batchdeploynft"
  */
 
 export type dictDeployNFT = {
