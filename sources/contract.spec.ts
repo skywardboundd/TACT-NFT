@@ -34,7 +34,17 @@ export type dictDeployNFT = {
     amount: bigint;
     initNFTBody: InitNFTBody;
 };
-
+export const dictDeployNFTItem = {
+    serialize: (src: dictDeployNFT, builder: Builder) => {
+        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
+    },
+    parse: (src: Slice) => {
+        return {
+            amount: src.loadCoins(),
+            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
+        };
+    },
+};
 
 const minTonsForStorage = 50000000n;
 const sendTransfer = async (
@@ -68,17 +78,6 @@ function loadGetterTupleNFTData(source: TupleItem[]): NFTData {
     return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
 
-export const dictDeployNFTItem = {
-    serialize: (src: dictDeployNFT, builder: Builder) => {
-        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
-    },
-    parse: (src: Slice) => {
-        return {
-            amount: src.loadCoins(),
-            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
-        };
-    },
-};
 
 
 const Op = {
