@@ -9,7 +9,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     collectionAddress: Address;
     // state init data don't have this parameters
     owner: Address? = null;
-    content: Cell?         = null;
+    content: Cell?  = null;
 
     init(itemIndex: Int, collectionAddress: Address) {
         self.itemIndex         = itemIndex;
