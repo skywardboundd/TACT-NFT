@@ -58,14 +58,14 @@ dotenv.config();
     console.log("Current deployment wallet balance = ", fromNano(balance).toString(), "💎TON");
     console.log("Deploying collection");
 
-    let ownerAddress = deployer_wallet_contract.address;
+    let owner = deployer_wallet_contract.address;
     let content = beginCell().storeStringTail(nextItemIndex.toString() + ".json").endCell();
 
     console.log(content.toBoc().toString('hex'));
     
     let initNFTBody: InitNFTBody = {
         $$type: 'InitNFTBody',
-        ownerAddress: ownerAddress,
+        owner: owner,
         content: content
     }
 
