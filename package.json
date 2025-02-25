@@ -5,7 +5,8 @@
     "lint": "yarn misti ./tact.config.json",
     "test": "yarn build && jest",
     "deploy": "ts-node ./sources/contract.deploy.ts",
-    "read": "ts-node ./sources/contract.read.ts"
+    "read": "ts-node ./sources/contract.read.ts",
+    "deploynft": "ts-node ./sources/contract.nft_deploy.ts"
   },
   "dependencies": {
     "@nowarp/misti": "~0.5.0",
@@ -26,6 +27,7 @@
     "jest": "^29.3.1",
     "open": "^8.4.0",
     "prando": "^6.0.1",
+    "dotenv": "^16.4.5",
     "prettier": "^2.5.1",
     "qs": "^6.11.0",
     "ts-jest": "^29.0.3",

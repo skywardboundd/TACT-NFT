@@ -36,7 +36,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
             body: initNFTBody,
             code: stateInit.code,
             data: stateInit.data,
-            mode: 1     
+            mode: SendPayGasSeparately     
         });
     }
 

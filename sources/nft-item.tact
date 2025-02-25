@@ -42,7 +42,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
 
     // we need it to accept deploy body from NFTCollection
     receive(msg: Slice){
-        // we need only use 
+        // we need this type only in init
         nativeThrowUnless(self.InvalidData, self.ownerAddress == null);
 
         let ownerAddress: Address = msg.loadAddress();
@@ -77,11 +77,11 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
         nativeThrowUnless(self.InvalidFees, restAmount >= 0);
 
         if(msg.forwardAmount > 0){
-            self.sendMsg(msg.newOwner, msg.forwardAmount, self.OwnershipAssigned, msg.queryId, beginCell().storeAddress(self.ownerAddress!!).storeSlice(msg.forwardPayload), 1);
+            self.sendMsg(msg.newOwner, msg.forwardAmount, self.OwnershipAssigned, msg.queryId, beginCell().storeAddress(self.ownerAddress!!).storeSlice(msg.forwardPayload), SendPayGasSeparately);
         }
         if(needResponse) { 
             self.forceChain(msg.responseDestination!!);
-            self.sendMsg(msg.responseDestination!!, restAmount, self.Excesses, msg.queryId, beginCell(), 1);
+            self.sendMsg(msg.responseDestination!!, restAmount, self.Excesses, msg.queryId, beginCell(), SendPayGasSeparately);
         }
         self.ownerAddress = msg.newOwner;
     }
@@ -90,7 +90,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
         // uninit
         nativeThrowUnless(self.NotInit, self.ownerAddress != null);
 
-        self.sendMsg(sender(), 0, self.ReportStaticData, msg.queryId, beginCell().storeUint(self.itemIndex, 256).storeAddress(self.collectionAddress), 64);
+        self.sendMsg(sender(), 0, self.ReportStaticData, msg.queryId, beginCell().storeUint(self.itemIndex, 256).storeAddress(self.collectionAddress), SendRemainingValue);
     }
    
     get fun get_nft_data(): NFTData {

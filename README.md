@@ -44,12 +44,24 @@ yarn lint
 
 ## Deployment
 
-To deploy a contract, follow these steps:
+To deploy a NFT collection follow some instructions in [`contract.deploy.ts`](./sources/contract.deploy.ts) and define in `.env` values:
+- `MNEMONICS` 
+if nft collection have Off-chain data : 
+- `COLLECTION_LINK` ( collection metadata )
+- `COMMON_LINK` 
+then 
+```shell 
+yarn deploy
+```
 
-1. Define the [`contract.tact`](./sources/contract.tact) file that will be used as entry point of your contract.
-2. Customize the [`contract.deploy.ts`](./sources/contract.deploy.ts) file based on your `contract.tact` to generate a deployment link. It is crucial to ensure the proper invocation of the `init()` function within the contract.
+To deploy NFT Item follow some instructions in [`contract.deploy_nft.ts`](./sources/contract.deploy_nft.ts) and define in `.env`
+- `COLLECTION_ADDRESS`
+- `NEXT_ITEM_INDEX`
 
-If you rename `contract.tact`, be sure to update [`tact.config.json`](./tact.config.json) accordingly. For a description of `tact.config.json`, see the [Configuration page in the Tact documentation](https://docs.tact-lang.org/book/config).
+then 
+```shell 
+yarn deploynft
+```
 
 ## Testing
 
@@ -67,12 +79,14 @@ yarn test
 ```
 
 ## Opportuinies 
-1) Use ^Struct in future versions of tact 
+1) Use ^Struct in future versions of tact
 2) Use opcode with deploying NFT 
 3) If we can check some conditionals after loadData(), in our case it is in NFTItem owner != null
 4) Using TupleBool 
 5) Either type in TACT
 6) With another way to use addr_none$00 in tact we can delete ? in responceDestination var  
+7) Calculate gasPerItem and require to have in batch deploy count * gasPerItem ( and have in a message count of items, keys can be 1...count, to just iterate, not delete and get min ) 
+8) Send excess message after nft deploy with amount myBalance() - self.minTonsForStorage
 
 ## Some bags ( or fithes :) ) 
 1) TACT can have only 2 references in root of c4, can't have more 

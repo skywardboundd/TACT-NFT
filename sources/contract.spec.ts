@@ -20,7 +20,7 @@ import {
     NFTInitData,
     loadNFTInitData,
     ChangeOwner
-} from "./output_func/NFT_NFTCollection";
+} from "./output/NFT_NFTCollection";
 
 import {
     NFTItem,
@@ -28,7 +28,7 @@ import {
     NFTData,
     loadNFTData,
     storeNFTInitData,  
-}   from "./output_func/NFT_NFTItem";
+}   from "./output/NFT_NFTItem";
 
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
@@ -98,9 +98,6 @@ const Op = {
     transferEditorship: 0x1c04412a,
     editorshipAssigned: 0x511a4463
 }
-
-
-// import { findErrorCodeByMessage } from './utils/error';
 
 NFTItem.prototype.getOwner = async function (this: NFTItem, provider: ContractProvider): Promise<Address | null> {
     let res = await this.getGetNftData(provider);
@@ -381,7 +378,7 @@ describe("NFT Collection Contract", () => {
             notOwner = await blockchain.treasury('notOwner');
     
             defaultCommonContent = beginCell().storeStringTail("common").endCell();
-            defaultCollectionContent = beginCell().storeStringRefTail("collectioncontent").endCell();
+            defaultCollectionContent = beginCell().storeStringTail("collectioncontent").endCell();
 
             defaultContent = beginCell().storeRef(defaultCollectionContent).storeRef(defaultCommonContent).endCell();
                 

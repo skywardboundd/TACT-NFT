@@ -1,9 +1,10 @@
-import { beginCell, contractAddress, toNano, TonClient4, WalletContractV4, internal, fromNano, Cell } from "@ton/ton";
+import { beginCell, contractAddress, toNano, TonClient4, WalletContractV4, internal, fromNano, Cell, address } from "@ton/ton";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 
-import { NFTCollection, RoyaltyParams } from "./output/NFT_NFTCollection";
+import { NFTCollection, RoyaltyParams, DeployNFT, NFTInitData, storeNFTInitData } from "./output/NFT_NFTCollection";
 
 import * as dotenv from "dotenv";
+import { NFTItem, storeDeployNFT } from "./output/NFT_NFTItem";
 dotenv.config();
 
 
@@ -37,33 +38,14 @@ dotenv.config();
 
     let deployer_wallet_contract = client4.open(deployer_wallet);
 
-    let collectionLink = process.env.COLLECTION_LINK!!.toString();
-    let commonLink = process.env.COMMON_LINK!!.toString();
-
     
-    let collectionData = beginCell().storeUint(1, 8).storeStringTail(collectionLink).endCell(); // Snake string
-    let commonData = beginCell().storeStringTail(commonLink).endCell(); // Snake string
-
-    let defaultContent = beginCell().storeRef(collectionData).storeRef(commonData).endCell();
-    
-    let nextItemIndex = 0n;
-    let owner = deployer_wallet_contract.address; // can be changed to any address
-
-    let royaltyOwner = deployer_wallet_contract.address;
-
-    let royaltyParams: RoyaltyParams = {
-        $$type: 'RoyaltyParams',
-        nominator: 1n,
-        dominator: 100n,
-        owner: royaltyOwner,
-    } 
-
     // Compute init data for deployment
     // NOTICE: the parameters inside the init functions were the input for the contract address
-    // which means any changes will change the smart contract address as well
-    let init = await NFTCollection.init(owner, nextItemIndex, defaultContent, royaltyParams);
-    let addressNFTCollection = contractAddress(workchain, init);
-    let deployAmount = toNano("0.15");
+    // which means any changes will change the smart contract address as well=
+    let addressNFTCollection = process.env.COLLECTION_ADDRESS!!.toString();
+    let deployAmount = toNano("0.01");
+    
+    let nextItemIndex = 0n;
 
     // send a message on new address contract to deploy it
     let seqno: number = await deployer_wallet_contract.getSeqno();
@@ -76,6 +58,25 @@ dotenv.config();
     console.log("Current deployment wallet balance = ", fromNano(balance).toString(), "💎TON");
     console.log("Deploying collection");
 
+    let ownerAddress = deployer_wallet_contract.address;
+    let content = beginCell().storeStringTail(nextItemIndex.toString() + ".json").endCell();
+
+    console.log(content.toBoc().toString('hex'));
+    
+    let initNFTBody: NFTInitData = {
+        $$type: 'NFTInitData',
+        ownerAddress: ownerAddress,
+        content: content
+    }
+
+    let msg_body: DeployNFT = {
+        $$type: "DeployNFT",
+        queryId: 0n,
+        itemIndex: nextItemIndex,
+        amount: deployAmount,
+        initNFTBody: beginCell().store(storeNFTInitData(initNFTBody)).endCell()
+    }
+
     await deployer_wallet_contract.sendTransfer({
         seqno,
         secretKey,
@@ -83,13 +84,15 @@ dotenv.config();
             internal({
                 to: addressNFTCollection,
                 value: deployAmount,
-                init: {
-                    code: init.code,
-                    data: init.data,
-                },
-                body: null
+                body: beginCell().store(storeDeployNFT(msg_body)).endCell()
             }),
         ],
     });
+
+    let init = await NFTItem.init(nextItemIndex, address(addressNFTCollection));
+    let itemNFTAddress = contractAddress(workchain, init);
+
+    console.log("New nft item: ", itemNFTAddress);
+
     console.log("====== Deployment message sent to =======\n", addressNFTCollection);
 })();
