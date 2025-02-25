@@ -18,6 +18,7 @@ trait ExitCodes {
     const IncorrectIndex: Int = 402;
     const IncorrectAmount: Int = 399;
     const IncorrectIndexes: Int = 403;
+    const IncorrectAmountWithDeploy: Int = 400;
 
     const IncorrectSender: Int = 401;
     const IncorrectBalanceAfrerSend: Int = 706;

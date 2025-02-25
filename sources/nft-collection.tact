@@ -20,6 +20,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
         let stateInit: StateInit = initOf NFTItem(itemIndex, myAddress());
         let nftAddress: Address  = contractAddress(stateInit);
 
+        nativeThrowUnless(self.IncorrectAmountWithDeploy, amount >= self.minTonsForStorage);
         send(SendParameters{
             to: nftAddress,
             value: amount,
