@@ -1,6 +1,7 @@
 # Tact NFT project
 
 This project is a port of the contracts from Func NFT TEP-62 & supporting TEP-66.
+contract works *identically* to the reference FunC implementation in https://github.com/ton-blockchain/token-contract/tree/main/nft.
 
 ## How to use
 
@@ -78,7 +79,7 @@ And then
 yarn test
 ```
 
-## Opportuinies 
+## Opportuinies if we do not need identically interfaces 
 1) Use ^Struct in future versions of tact
 2) Use opcode with deploying NFT 
 3) If we can check some conditionals after loadData(), in our case it is in NFTItem owner != null
@@ -87,6 +88,7 @@ yarn test
 6) With another way to use addr_none$00 in tact we can delete ? in responceDestination var  
 7) Calculate gasPerItem and require to have in batch deploy count * gasPerItem ( and have in a message count of items, keys can be 1...count, to just iterate, not delete and get min ) 
 8) Send excess message after nft deploy with amount myBalance() - self.minTonsForStorage
+9) Use `trait Ownable` 
 
 ## Some bags ( or fithes :) ) 
 1) TACT can have only 2 references in root of c4, can't have more 
