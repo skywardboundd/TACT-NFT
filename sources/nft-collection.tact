@@ -90,7 +90,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             curr = msg.deployList.get(counter);
         }
 
-        send(SendParameters{ bounce: false, to: sender(), value: 0, mode: 128 }); // return tons
+        send(SendParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance }); // return tons
     }
     
     get fun get_collection_data(): CollectionData {

@@ -44,8 +44,17 @@ yarn lint
 ```
 
 ## Idea of this standard 
+### Deploy 1 NFT
+It makes sense to make sure we send at least a minimum of a tone to storage, and to return the remaining tons after such messages so we don't have to guess. Also, it makes sense to notify the new owner after the nft is deposited, as in the case of a transfer.
+
+And it will be much cleaner when we have message to deploy
+
 ### Batch deploy 
-There is no sense 
+1) It doesn't make sense to mint old nfts, just messages will come as they have already been initialized, so it only makes sense to mint immediately nextItemIndex and take exactly the next item via get, not delete, because if the next index will be > nextItemIndex, we will get throw immediately. 
+
+That's why we can use map in tact, not dict-like cells with asm function ( and auto-code for building this dictionary)
+
+2) Return remaining tons to owner
 
 ## Deployment
 
