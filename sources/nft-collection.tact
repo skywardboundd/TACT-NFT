@@ -1,19 +1,9 @@
-import "@stdlib/deploy";
+import "@stdlib/ownable";
 import "./constants";
 import "./messages";
 import "./nft-item";
 
-struct DictDelete {
-    dict: Cell;
-    itemIndex: Int? as uint64;
-    item: Slice?;
-    flag: Int as uint256;
-}
-
-// (cell, (int, slice, int)) ~udict::delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMIN" "NULLSWAPIFNOT2";
-asm(-> 0 2 1 3) fun deleteGetMin(dict: Cell, keySize: Int): DictDelete { DICTUREMMIN NULLSWAPIFNOT2 }
-
-contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
+contract NFTCollection with WalletExitcodes, GasConstants, OpCodes, OwnableTransferable {
     owner: Address;
     nextItemIndex: Int as uint64;
     content: Cell;
@@ -26,14 +16,14 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
         self.royaltyParams = royaltyParams;
     }
     
-    fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell) {
+    fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: InitNFTBody) {
         let stateInit: StateInit = initOf NFTItem(itemIndex, myAddress());
         let nftAddress: Address  = contractAddress(stateInit);
 
         send(SendParameters{
             to: nftAddress,
             value: amount,
-            body: initNFTBody,
+            body: initNFTBody.toCell(),
             code: stateInit.code,
             data: stateInit.data,
             mode: SendPayGasSeparately     
@@ -51,15 +41,21 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
                       queryId: msg.queryId,
                       params:  self.royaltyParams,
                     }.toCell(),
-            mode: 64 
+            mode: SendRemainingValue 
         });
     }
 
     receive(msg: DeployNFT) {
-        nativeThrowUnless(self.IncorrectSender, sender() == self.owner); 
+        self.requireOwner();
         nativeThrowUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
 
-        self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody); 
+        let initNFTBody = InitNFTBody{
+            queryId: msg.queryId,
+            owner: msg.owner,
+            content: msg.content
+        };
+
+        self.deployNFTItem(msg.itemIndex, msg.amount, initNFTBody); 
 
         if(msg.itemIndex == self.nextItemIndex) {
             self.nextItemIndex += 1;
@@ -67,30 +63,34 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
     }
 
     receive(msg: BatchDeploy) {
-        nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
+        self.requireOwner();
 
-        let counter: Int     = 0;
-        let curr: DictDelete = deleteGetMin(msg.deployList, 64);
+        nativeReserve(0, 4);
 
-        while (curr.flag != 0) {
+        let counter: Int          = 0;
+        let curr: InitNFTBodyDict? = msg.deployList.get(counter);
+        
+        while (curr != null) {
             counter += 1;
             
             nativeThrowIf(self.IncorrectAmount, counter >= 250);
-            nativeThrowUnless(self.IncorrectIndexes + counter, curr.itemIndex!! <= self.nextItemIndex);
+            nativeThrowUnless(self.IncorrectIndexes + counter, curr!!.index <= self.nextItemIndex);
 
-            self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef());
-            if (curr.itemIndex!! == self.nextItemIndex) {
+            let initNFTBody = InitNFTBody {
+                queryId: msg.queryId,
+                owner: curr!!.owner,
+                content: curr!!.content
+            };
+
+            self.deployNFTItem(curr!!.index, curr!!.amount, initNFTBody);
+            if (curr!!.index == self.nextItemIndex) {
                 self.nextItemIndex += 1;
             }
 
-            msg.deployList = curr.dict;
-            curr           = deleteGetMin(msg.deployList, 64);
+            curr = msg.deployList.get(counter);
         }
-    }
 
-    receive(msg: ChangeOwner)  {
-        nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
-        self.owner = msg.newOwner;
+        send(SendParameters{ bounce: false, to: sender(), value: 0, mode: 128 }); // return tons
     }
     
     get fun get_collection_data(): CollectionData {
@@ -98,7 +98,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
         return CollectionData{
             nextItemIndex: self.nextItemIndex,
             collectionContent: cs.loadRef(),
-            ownerAddress: self.owner
+            owner: self.owner
         };
     }
 
