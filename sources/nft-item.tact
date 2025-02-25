@@ -45,11 +45,11 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
         nativeThrowUnless(self.InvalidData, self.owner == null);
 
         let owner: Address = msg.loadAddress();
-        let content: Cell         = msg.loadRef();    
+        let content: Cell  = msg.loadRef();    
 
         nativeThrowUnless(self.IncorrectDeployer, sender() == self.collectionAddress);
-        self.owner = owner;
-        self.content      = content;
+        self.owner   = owner;
+        self.content = content;
     }
 
     receive(msg: Transfer) {
