@@ -719,7 +719,7 @@ export type NFTData = {
     init: bigint;
     itemIndex: bigint;
     collectionAddress: Address;
-    ownerAddress: Address | null;
+    owner: Address | null;
     content: Cell | null;
 }
 
@@ -729,7 +729,7 @@ export function storeNFTData(src: NFTData) {
         b_0.storeInt(src.init, 257);
         b_0.storeUint(src.itemIndex, 64);
         b_0.storeAddress(src.collectionAddress);
-        b_0.storeAddress(src.ownerAddress);
+        b_0.storeAddress(src.owner);
         if (src.content !== null && src.content !== undefined) { b_0.storeBit(true).storeRef(src.content); } else { b_0.storeBit(false); }
     };
 }
@@ -739,27 +739,27 @@ export function loadNFTData(slice: Slice) {
     const _init = sc_0.loadIntBig(257);
     const _index = sc_0.loadUintBig(64);
     const _collectionAddress = sc_0.loadAddress();
-    const _ownerAddress = sc_0.loadMaybeAddress();
+    const _owner = sc_0.loadMaybeAddress();
     const _content = sc_0.loadBit() ? sc_0.loadRef() : null;
-    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
 
 function loadTupleNFTData(source: TupleReader) {
     const _init = source.readBigNumber();
     const _index = source.readBigNumber();
     const _collectionAddress = source.readAddress();
-    const _ownerAddress = source.readAddressOpt();
+    const _owner = source.readAddressOpt();
     const _content = source.readCellOpt();
-    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
 
 function loadGetterTupleNFTData(source: TupleReader) {
     const _init = source.readBigNumber();
     const _index = source.readBigNumber();
     const _collectionAddress = source.readAddress();
-    const _ownerAddress = source.readAddressOpt();
+    const _owner = source.readAddressOpt();
     const _content = source.readCellOpt();
-    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
 
 function storeTupleNFTData(source: NFTData) {
@@ -767,7 +767,7 @@ function storeTupleNFTData(source: NFTData) {
     builder.writeNumber(source.init);
     builder.writeNumber(source.itemIndex);
     builder.writeAddress(source.collectionAddress);
-    builder.writeAddress(source.ownerAddress);
+    builder.writeAddress(source.owner);
     builder.writeCell(source.content);
     return builder.build();
 }
@@ -783,53 +783,53 @@ function dictValueParserNFTData(): DictionaryValue<NFTData> {
     }
 }
 
-export type NFTInitData = {
-    $$type: 'NFTInitData';
-    ownerAddress: Address;
+export type InitNFTBody = {
+    $$type: 'InitNFTBody';
+    owner: Address;
     content: Cell;
 }
 
-export function storeNFTInitData(src: NFTInitData) {
+export function storeInitNFTBody(src: InitNFTBody) {
     return (builder: Builder) => {
         const b_0 = builder;
-        b_0.storeAddress(src.ownerAddress);
+        b_0.storeAddress(src.owner);
         b_0.storeRef(src.content);
     };
 }
 
-export function loadNFTInitData(slice: Slice) {
+export function loadInitNFTBody(slice: Slice) {
     const sc_0 = slice;
-    const _ownerAddress = sc_0.loadAddress();
+    const _owner = sc_0.loadAddress();
     const _content = sc_0.loadRef();
-    return { $$type: 'NFTInitData' as const, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'InitNFTBody' as const, owner: _owner, content: _content };
 }
 
-function loadTupleNFTInitData(source: TupleReader) {
-    const _ownerAddress = source.readAddress();
+function loadTupleInitNFTBody(source: TupleReader) {
+    const _owner = source.readAddress();
     const _content = source.readCell();
-    return { $$type: 'NFTInitData' as const, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'InitNFTBody' as const, owner: _owner, content: _content };
 }
 
-function loadGetterTupleNFTInitData(source: TupleReader) {
-    const _ownerAddress = source.readAddress();
+function loadGetterTupleInitNFTBody(source: TupleReader) {
+    const _owner = source.readAddress();
     const _content = source.readCell();
-    return { $$type: 'NFTInitData' as const, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'InitNFTBody' as const, owner: _owner, content: _content };
 }
 
-function storeTupleNFTInitData(source: NFTInitData) {
+function storeTupleInitNFTBody(source: InitNFTBody) {
     const builder = new TupleBuilder();
-    builder.writeAddress(source.ownerAddress);
+    builder.writeAddress(source.owner);
     builder.writeCell(source.content);
     return builder.build();
 }
 
-function dictValueParserNFTInitData(): DictionaryValue<NFTInitData> {
+function dictValueParserInitNFTBody(): DictionaryValue<InitNFTBody> {
     return {
         serialize: (src, builder) => {
-            builder.storeRef(beginCell().store(storeNFTInitData(src)).endCell());
+            builder.storeRef(beginCell().store(storeInitNFTBody(src)).endCell());
         },
         parse: (src) => {
-            return loadNFTInitData(src.loadRef().beginParse());
+            return loadInitNFTBody(src.loadRef().beginParse());
         }
     }
 }
@@ -838,7 +838,7 @@ export type CollectionData = {
     $$type: 'CollectionData';
     nextItemIndex: bigint;
     collectionContent: Cell;
-    ownerAddress: Address;
+    owner: Address;
 }
 
 export function storeCollectionData(src: CollectionData) {
@@ -846,7 +846,7 @@ export function storeCollectionData(src: CollectionData) {
         const b_0 = builder;
         b_0.storeUint(src.nextItemIndex, 64);
         b_0.storeRef(src.collectionContent);
-        b_0.storeAddress(src.ownerAddress);
+        b_0.storeAddress(src.owner);
     };
 }
 
@@ -854,29 +854,29 @@ export function loadCollectionData(slice: Slice) {
     const sc_0 = slice;
     const _nextItemIndex = sc_0.loadUintBig(64);
     const _collectionContent = sc_0.loadRef();
-    const _ownerAddress = sc_0.loadAddress();
-    return { $$type: 'CollectionData' as const, nextItemIndex: _nextItemIndex, collectionContent: _collectionContent, ownerAddress: _ownerAddress };
+    const _owner = sc_0.loadAddress();
+    return { $$type: 'CollectionData' as const, nextItemIndex: _nextItemIndex, collectionContent: _collectionContent, owner: _owner };
 }
 
 function loadTupleCollectionData(source: TupleReader) {
     const _nextItemIndex = source.readBigNumber();
     const _collectionContent = source.readCell();
-    const _ownerAddress = source.readAddress();
-    return { $$type: 'CollectionData' as const, nextItemIndex: _nextItemIndex, collectionContent: _collectionContent, ownerAddress: _ownerAddress };
+    const _owner = source.readAddress();
+    return { $$type: 'CollectionData' as const, nextItemIndex: _nextItemIndex, collectionContent: _collectionContent, owner: _owner };
 }
 
 function loadGetterTupleCollectionData(source: TupleReader) {
     const _nextItemIndex = source.readBigNumber();
     const _collectionContent = source.readCell();
-    const _ownerAddress = source.readAddress();
-    return { $$type: 'CollectionData' as const, nextItemIndex: _nextItemIndex, collectionContent: _collectionContent, ownerAddress: _ownerAddress };
+    const _owner = source.readAddress();
+    return { $$type: 'CollectionData' as const, nextItemIndex: _nextItemIndex, collectionContent: _collectionContent, owner: _owner };
 }
 
 function storeTupleCollectionData(source: CollectionData) {
     const builder = new TupleBuilder();
     builder.writeNumber(source.nextItemIndex);
     builder.writeCell(source.collectionContent);
-    builder.writeAddress(source.ownerAddress);
+    builder.writeAddress(source.owner);
     return builder.build();
 }
 
@@ -1227,7 +1227,7 @@ export type NFTItem$Data = {
     $$type: 'NFTItem$Data';
     itemIndex: bigint;
     collectionAddress: Address;
-    ownerAddress: Address | null;
+    owner: Address | null;
     content: Cell | null;
 }
 
@@ -1236,7 +1236,7 @@ export function storeNFTItem$Data(src: NFTItem$Data) {
         const b_0 = builder;
         b_0.storeUint(src.itemIndex, 64);
         b_0.storeAddress(src.collectionAddress);
-        b_0.storeAddress(src.ownerAddress);
+        b_0.storeAddress(src.owner);
         if (src.content !== null && src.content !== undefined) { b_0.storeBit(true).storeRef(src.content); } else { b_0.storeBit(false); }
     };
 }
@@ -1245,32 +1245,32 @@ export function loadNFTItem$Data(slice: Slice) {
     const sc_0 = slice;
     const _index = sc_0.loadUintBig(64);
     const _collectionAddress = sc_0.loadAddress();
-    const _ownerAddress = sc_0.loadMaybeAddress();
+    const _owner = sc_0.loadMaybeAddress();
     const _content = sc_0.loadBit() ? sc_0.loadRef() : null;
-    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
 
 function loadTupleNFTItem$Data(source: TupleReader) {
     const _index = source.readBigNumber();
     const _collectionAddress = source.readAddress();
-    const _ownerAddress = source.readAddressOpt();
+    const _owner = source.readAddressOpt();
     const _content = source.readCellOpt();
-    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
 
 function loadGetterTupleNFTItem$Data(source: TupleReader) {
     const _index = source.readBigNumber();
     const _collectionAddress = source.readAddress();
-    const _ownerAddress = source.readAddressOpt();
+    const _owner = source.readAddressOpt();
     const _content = source.readCellOpt();
-    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTItem$Data' as const, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
 
 function storeTupleNFTItem$Data(source: NFTItem$Data) {
     const builder = new TupleBuilder();
     builder.writeNumber(source.itemIndex);
     builder.writeAddress(source.collectionAddress);
-    builder.writeAddress(source.ownerAddress);
+    builder.writeAddress(source.owner);
     builder.writeCell(source.content);
     return builder.build();
 }
@@ -1497,16 +1497,16 @@ const NFTCollection_types: ABIType[] = [
     {"name":"FactoryDeploy","header":1829761339,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"cashback","type":{"kind":"simple","type":"address","optional":false}}]},
     {"name":"Transfer","header":1607220500,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"newOwner","type":{"kind":"simple","type":"address","optional":false}},{"name":"responseDestination","type":{"kind":"simple","type":"address","optional":false}},{"name":"kind","type":{"kind":"simple","type":"uint","optional":false,"format":1}},{"name":"forwardAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"forwardPayload","type":{"kind":"simple","type":"slice","optional":false,"format":"remainder"}}]},
     {"name":"GetStaticData","header":801842850,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
-    {"name":"NFTData","header":null,"fields":[{"name":"init","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
-    {"name":"NFTInitData","header":null,"fields":[{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}}]},
-    {"name":"CollectionData","header":null,"fields":[{"name":"nextItemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionContent","type":{"kind":"simple","type":"cell","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":false}}]},
+    {"name":"NFTData","header":null,"fields":[{"name":"init","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"owner","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
+    {"name":"InitNFTBody","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}}]},
+    {"name":"CollectionData","header":null,"fields":[{"name":"nextItemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionContent","type":{"kind":"simple","type":"cell","optional":false}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}}]},
     {"name":"RoyaltyParams","header":null,"fields":[{"name":"nominator","type":{"kind":"simple","type":"uint","optional":false,"format":16}},{"name":"dominator","type":{"kind":"simple","type":"uint","optional":false,"format":16}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}}]},
     {"name":"GetRoyaltyParams","header":1765620048,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"DeployNFT","header":1,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"amount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"initNFTBody","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"BatchDeploy","header":2,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"deployList","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"ChangeOwner","header":3,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"newOwner","type":{"kind":"simple","type":"address","optional":false}}]},
     {"name":"ReportRoyaltyParams","header":2831876269,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"params","type":{"kind":"simple","type":"RoyaltyParams","optional":false}}]},
-    {"name":"NFTItem$Data","header":null,"fields":[{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"ownerAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
+    {"name":"NFTItem$Data","header":null,"fields":[{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"collectionAddress","type":{"kind":"simple","type":"address","optional":false}},{"name":"owner","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":true}}]},
     {"name":"DictDelete","header":null,"fields":[{"name":"dict","type":{"kind":"simple","type":"cell","optional":false}},{"name":"item","type":{"kind":"simple","type":"slice","optional":true}},{"name":"itemIndex","type":{"kind":"simple","type":"uint","optional":true,"format":64}},{"name":"flag","type":{"kind":"simple","type":"uint","optional":false,"format":256}}]},
     {"name":"NFTCollection$Data","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"nextItemIndex","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"nftItemCode","type":{"kind":"simple","type":"cell","optional":false}},{"name":"royaltyParams","type":{"kind":"simple","type":"RoyaltyParams","optional":false}}]},
 ]

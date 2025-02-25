@@ -10,7 +10,7 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     collectionAddress: Address;
 
     // state init data don't have this parameters
-    ownerAddress: Address? = null;
+    owner: Address? = null;
     content: Cell?         = null;
 
     init(itemIndex: Int, collectionAddress: Address) {
@@ -43,20 +43,20 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
     // we need it to accept deploy body from NFTCollection
     receive(msg: Slice){
         // we need this type only in init
-        nativeThrowUnless(self.InvalidData, self.ownerAddress == null);
+        nativeThrowUnless(self.InvalidData, self.owner == null);
 
-        let ownerAddress: Address = msg.loadAddress();
+        let owner: Address = msg.loadAddress();
         let content: Cell         = msg.loadRef();    
 
         nativeThrowUnless(self.IncorrectDeployer, sender() == self.collectionAddress);
-        self.ownerAddress = ownerAddress;
+        self.owner = owner;
         self.content      = content;
     }
 
     receive(msg: Transfer) {
         // not init 
-        nativeThrowUnless(self.NotInit, self.ownerAddress != null);
-        nativeThrowUnless(self.IncorrectSender, sender() == self.ownerAddress);
+        nativeThrowUnless(self.NotInit, self.owner != null);
+        nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
         nativeThrowUnless(708, msg.forwardPayload.bits() >= 1);
         self.forceChain(msg.newOwner);
 
@@ -77,28 +77,28 @@ contract NFTItem with WalletExitcodes, GasConstants, OpCodes {
         nativeThrowUnless(self.InvalidFees, restAmount >= 0);
 
         if(msg.forwardAmount > 0){
-            self.sendMsg(msg.newOwner, msg.forwardAmount, self.OwnershipAssigned, msg.queryId, beginCell().storeAddress(self.ownerAddress!!).storeSlice(msg.forwardPayload), SendPayGasSeparately);
+            self.sendMsg(msg.newOwner, msg.forwardAmount, self.OwnershipAssigned, msg.queryId, beginCell().storeAddress(self.owner!!).storeSlice(msg.forwardPayload), SendPayGasSeparately);
         }
         if(needResponse) { 
             self.forceChain(msg.responseDestination!!);
             self.sendMsg(msg.responseDestination!!, restAmount, self.Excesses, msg.queryId, beginCell(), SendPayGasSeparately);
         }
-        self.ownerAddress = msg.newOwner;
+        self.owner = msg.newOwner;
     }
 
     receive(msg: GetStaticData) {
         // uninit
-        nativeThrowUnless(self.NotInit, self.ownerAddress != null);
+        nativeThrowUnless(self.NotInit, self.owner != null);
 
         self.sendMsg(sender(), 0, self.ReportStaticData, msg.queryId, beginCell().storeUint(self.itemIndex, 256).storeAddress(self.collectionAddress), SendRemainingValue);
     }
    
     get fun get_nft_data(): NFTData {
         return NFTData{
-            init: self.ownerAddress != null ? -1 : 0, // -1 is true
+            init: self.owner != null ? -1 : 0, // -1 is true
             itemIndex: self.itemIndex,
             collectionAddress: self.collectionAddress,
-            ownerAddress: self.ownerAddress,
+            owner: self.owner,
             content: self.content
         };
     }

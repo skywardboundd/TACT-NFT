@@ -98,7 +98,7 @@ contract NFTCollection with WalletExitcodes, GasConstants, OpCodes {
         return CollectionData{
             nextItemIndex: self.nextItemIndex,
             collectionContent: cs.loadRef(),
-            ownerAddress: self.owner
+            owner: self.owner
         };
     }
 

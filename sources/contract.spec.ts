@@ -17,8 +17,8 @@ import {
     CollectionData,
     storeRoyaltyParams,
     RoyaltyParams,
-    NFTInitData,
-    loadNFTInitData,
+    InitNFTBody,
+    loadInitNFTBody,
     ChangeOwner
 } from "./output/NFT_NFTCollection";
 
@@ -27,7 +27,7 @@ import {
     Transfer,
     NFTData,
     loadNFTData,
-    storeNFTInitData,  
+    storeInitNFTBody,  
 }   from "./output/NFT_NFTItem";
 
 import "@ton/test-utils";
@@ -36,7 +36,7 @@ import { TonClient } from '@ton/ton';
 
 export type dictDeployNFT = {
     amount: bigint;
-    initNFTBody: NFTInitData;
+    initNFTBody: InitNFTBody;
 };
 
 
@@ -67,19 +67,19 @@ function loadGetterTupleNFTData(source: TupleItem[]): NFTData {
     let _init = (source[0] as TupleItemInt).value;
     let _index = (source[1] as TupleItemInt).value;
     let _collectionAddress = (source[2] as TupleItemSlice).cell.asSlice().loadAddress();
-    let _ownerAddress = (source[3] as TupleItemSlice).cell.asSlice().loadAddress();
+    let _owner = (source[3] as TupleItemSlice).cell.asSlice().loadAddress();
     let _content = (source[4] as TupleItemCell).cell;
-    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, ownerAddress: _ownerAddress, content: _content };
+    return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
 
 export const dictDeployNFTItem = {
     serialize: (src: dictDeployNFT, builder: Builder) => {
-        builder.storeCoins(src.amount).storeRef(beginCell().store(storeNFTInitData(src.initNFTBody)).endCell());
+        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
     },
     parse: (src: Slice) => {
         return {
             amount: src.loadCoins(),
-            initNFTBody: loadNFTInitData(src.loadRef().asSlice()),
+            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
         };
     },
 };
@@ -101,7 +101,7 @@ const Op = {
 
 NFTItem.prototype.getOwner = async function (this: NFTItem, provider: ContractProvider): Promise<Address | null> {
     let res = await this.getGetNftData(provider);
-    return res.ownerAddress;
+    return res.owner;
 };
 
 describe("NFT Item Contract", () => {
@@ -123,13 +123,13 @@ describe("NFT Item Contract", () => {
         defaultContent = beginCell().storeRef(beginCell().endCell()).endCell();
 
         itemNFT = blockchain.openContract(await NFTItem.fromInit(0n, owner.address));
-        let deployItemMsg: NFTInitData = {
-            $$type: 'NFTInitData',
-            ownerAddress: owner.address,
+        let deployItemMsg: InitNFTBody = {
+            $$type: 'InitNFTBody',
+            owner: owner.address,
             content: defaultContent
         }
 
-        let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().store(storeNFTInitData(deployItemMsg)).asSlice());
+        let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().store(storeInitNFTBody(deployItemMsg)).asSlice());
 
         expect(deployResult.transactions).toHaveTransaction({
             from: owner.address,
@@ -159,7 +159,7 @@ describe("NFT Item Contract", () => {
         let staticData = await itemNFT.getGetNftData();
         
         expect(staticData.init).toBe(-1n);
-        expect(staticData.ownerAddress).toEqualAddress(owner.address);
+        expect(staticData.owner).toEqualAddress(owner.address);
         expect(staticData.itemIndex).toBe(0n);
         expect(staticData.content).toEqualCell(defaultContent);
     });
@@ -328,7 +328,7 @@ describe("NFT Item Contract", () => {
         it("should not get static data", async () => {
             let staticData = await itemNFT.getGetNftData();
             expect(staticData.init).toBe(0n);
-            expect(staticData.ownerAddress).toBeNull();
+            expect(staticData.owner).toBeNull();
             expect(staticData.itemIndex).toBe(itemIndex);
             expect(staticData.content).toBeNull();
         });
@@ -357,7 +357,7 @@ NFTCollection.prototype.getNextItemIndex = async function (this: NFTCollection, 
 
 NFTCollection.prototype.getOwner = async function (this: NFTCollection, provider: ContractProvider): Promise<Address> {
     let res = await this.getGetCollectionData(provider);
-    return res.ownerAddress;
+    return res.owner;
 };
 describe("NFT Collection Contract", () => {
     let blockchain: Blockchain;
@@ -410,7 +410,7 @@ describe("NFT Collection Contract", () => {
     
     it("should get static data correctly", async () => {
         let staticData = await collectionNFT.getGetCollectionData();
-        expect(staticData.ownerAddress).toEqualAddress(owner.address);
+        expect(staticData.owner).toEqualAddress(owner.address);
         expect(staticData.nextItemIndex).toBe(0n);
         expect(staticData.collectionContent).toEqualCell(defaultCollectionContent);
     });
@@ -466,9 +466,9 @@ describe("NFT Collection Contract", () => {
         const deployNFT = async (itemIndex: bigint, collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>): Promise<[SandboxContract<NFTItem>, any]>  => {
             let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
             
-            let initNFTBody: NFTInitData = {
-                $$type: 'NFTInitData',
-                ownerAddress: owner.address,
+            let initNFTBody: InitNFTBody = {
+                $$type: 'InitNFTBody',
+                owner: owner.address,
                 content: content
             }
     
@@ -477,7 +477,7 @@ describe("NFT Collection Contract", () => {
                 queryId: 1n, 
                 itemIndex: itemIndex,
                 amount: 10000000n,
-                initNFTBody: beginCell().store(storeNFTInitData(initNFTBody)).endCell(),
+                initNFTBody: beginCell().store(storeInitNFTBody(initNFTBody)).endCell(),
             };
             
             itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, collectionNFT.address));
@@ -494,7 +494,7 @@ describe("NFT Collection Contract", () => {
             let nftData = await itemNFT.getGetNftData();
             
             expect(nftData.content).toEqualCell(content);
-            expect(nftData.ownerAddress).toEqualAddress(owner.address);
+            expect(nftData.owner).toEqualAddress(owner.address);
             expect(nftData.itemIndex).toBe(nextItemIndex);
             expect(nftData.collectionAddress).toEqualAddress(collectionNFT.address);
     
@@ -566,9 +566,9 @@ describe("NFT Collection Contract", () => {
             let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
             let i: bigint = 0n;
     
-            let initNFTBody: NFTInitData = {
-                $$type: 'NFTInitData',
-                ownerAddress: owner.address,
+            let initNFTBody: InitNFTBody = {
+                $$type: 'InitNFTBody',
+                owner: owner.address,
                 content: content,
             }
     

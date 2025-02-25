@@ -17,19 +17,19 @@ struct NFTData{
     init: Int;
     itemIndex: Int as uint64;
     collectionAddress: Address;
-    ownerAddress: Address?;
+    owner: Address?;
     content: Cell?;
 }
-struct NFTInitData {
-    ownerAddress: Address;
+
+struct InitNFTBody {
+    owner: Address;
     content: Cell;
 }
 
 struct CollectionData {
     nextItemIndex: Int as uint64;
     collectionContent: Cell;
-    ownerAddress: Address;
-
+    owner: Address;
 }
 
 struct RoyaltyParams {
@@ -46,7 +46,7 @@ message(1) DeployNFT {
     queryId: Int as uint64;
     itemIndex: Int as uint64;
     amount: Int as coins;
-    initNFTBody: Cell;
+    initNFTBody: Cell; // ^InitNFTBody
 }
 
 message(2) BatchDeploy {

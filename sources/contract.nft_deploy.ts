@@ -1,7 +1,7 @@
 import { beginCell, contractAddress, toNano, TonClient4, WalletContractV4, internal, fromNano, Cell, address } from "@ton/ton";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 
-import { NFTCollection, RoyaltyParams, DeployNFT, NFTInitData, storeNFTInitData } from "./output/NFT_NFTCollection";
+import { NFTCollection, RoyaltyParams, DeployNFT, InitNFTBody, storeInitNFTBody } from "./output/NFT_NFTCollection";
 
 import * as dotenv from "dotenv";
 import { NFTItem, storeDeployNFT } from "./output/NFT_NFTItem";
@@ -63,8 +63,8 @@ dotenv.config();
 
     console.log(content.toBoc().toString('hex'));
     
-    let initNFTBody: NFTInitData = {
-        $$type: 'NFTInitData',
+    let initNFTBody: InitNFTBody = {
+        $$type: 'InitNFTBody',
         ownerAddress: ownerAddress,
         content: content
     }
@@ -74,7 +74,7 @@ dotenv.config();
         queryId: 0n,
         itemIndex: nextItemIndex,
         amount: deployAmount,
-        initNFTBody: beginCell().store(storeNFTInitData(initNFTBody)).endCell()
+        initNFTBody: beginCell().store(storeInitNFTBody(initNFTBody)).endCell()
     }
 
     await deployer_wallet_contract.sendTransfer({
