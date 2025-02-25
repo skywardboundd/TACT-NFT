@@ -2,9 +2,7 @@ import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Buil
 import {
     Blockchain,
     SandboxContract,
-    SmartContract,
     TreasuryContract,
-    internal
 } from '@ton/sandbox';
 
 import {
@@ -13,8 +11,6 @@ import {
     GetRoyaltyParams,
     GetStaticData,
     BatchDeploy,
-    ReportRoyaltyParams,
-    CollectionData,
     storeRoyaltyParams,
     RoyaltyParams,
     InitNFTBody,
@@ -516,7 +512,7 @@ describe("NFT Collection Contract", () => {
         it("should not deploy previous nft", async () => {
             let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
     
-            let nextItemIndex = await collectionNFT.getNextItemIndex()!!
+            let nextItemIndex: bigint = await collectionNFT.getNextItemIndex()!!
             for( let i = 0; i < 10; i++) {
                 let [itemNFT, trx] = await deployNFT(nextItemIndex++, collectionNFT, owner, owner);
             }
@@ -629,7 +625,8 @@ describe("NFT Collection Contract", () => {
             expect(await itemNFT.getGetNftData()).toHaveProperty('itemIndex', count - 1n);
         });
     
-        it("Shouldn't batch mint more than 250 items", async () => { 
+        // this test doesn't make sense because we can only mint 130 in func & 72 on tact 1.5.4 ( 128 in tact 1.6 dev vers ) 
+        it("Shouldn't batch mint more than 250 items", async () => {
             let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 260n);
             
             expect(trxResult.transactions).toHaveTransaction({

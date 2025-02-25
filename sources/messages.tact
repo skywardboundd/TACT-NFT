@@ -51,7 +51,7 @@ message(1) DeployNFT {
 
 message(2) BatchDeploy {
     queryId: Int as uint64;
-    deployList: Cell;
+    deployList: Cell; // dict 
 }
 
 message(3) ChangeOwner { 
