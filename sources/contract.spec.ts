@@ -552,20 +552,20 @@ describe("NFT Collection Contract", () => {
     describe("BATCH MINT TESTS", () => {
         const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint) => {
             let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
-            // let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
+            
             let dct: Dictionary<bigint, InitNFTBodyDict> = Dictionary.empty();
             
+            let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
             let i: bigint = 0n;
 
             while (i < count) {
                 let initNFTBody: InitNFTBodyDict = {
                     $$type: 'InitNFTBodyDict',
                     amount: 10000000n,
-                    index: i,
                     owner: owner.address,
                     content: content,
                 }
-                dct.set(i, initNFTBody);
+                dct.set(i + nextItemIndex, initNFTBody);
                 i += 1n;
             }
     
@@ -578,6 +578,8 @@ describe("NFT Collection Contract", () => {
             const trxResult = await collectionNFT.send(sender.getSender(), {value: 1000000000000n * (count + 10n) }, batchMintNFT);
             return trxResult;
         };
+
+        beforeEach(async () => {}); // make separate test
     
         it("test max batch mint", async () => {
             let L = 1n;

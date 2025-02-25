@@ -3,7 +3,7 @@ import "./constants";
 import "./messages";
 import "./nft-item";
 
-contract NFTCollection with ExitCodes, GasConstants, OpCodes {
+contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferable {
     owner: Address;
     nextItemIndex: Int as uint64;
     content: Cell;
@@ -67,14 +67,13 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes {
 
         nativeReserve(0, 4);
 
-        let counter: Int           = 0;
+        let counter: Int           = self.nextItemIndex;
         let curr: InitNFTBodyDict? = msg.deployList.get(counter);
-        
+
+        let check: InitNFTBodyDict? = msg.deployList.get(counter + 249);
+        nativeThrowUnless(self.IncorrectAmount, check == null);
         while (curr != null) {
-            counter += 1;
-            
-            nativeThrowIf(self.IncorrectAmount, counter >= 250);
-            nativeThrowUnless(self.IncorrectIndexes + counter, curr!!.index <= self.nextItemIndex);
+            nativeThrowUnless(self.IncorrectIndexes + counter, counter <= self.nextItemIndex);
 
             let initNFTBody = InitNFTBody {
                 queryId: msg.queryId,
@@ -82,11 +81,12 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes {
                 content: curr!!.content
             };
 
-            self.deployNFTItem(curr!!.index, curr!!.amount, initNFTBody);
-            if (curr!!.index == self.nextItemIndex) {
-                self.nextItemIndex += 1;
-            }
+            self.deployNFTItem(counter, curr!!.amount, initNFTBody);
+            
+            self.nextItemIndex += 1;
+            
 
+            counter += 1;
             curr = msg.deployList.get(counter);
         }
 

@@ -43,6 +43,10 @@ If you want to quickly check your changes for validity, run:
 yarn lint
 ```
 
+## Idea of this standard 
+### Batch deploy 
+There is no sense 
+
 ## Deployment
 
 To deploy a NFT collection follow some instructions in [`contract.deploy.ts`](./sources/contract.deploy.ts) and define in `.env` values:
@@ -50,6 +54,7 @@ To deploy a NFT collection follow some instructions in [`contract.deploy.ts`](./
 if nft collection have Off-chain data : 
 - `COLLECTION_LINK` ( collection metadata )
 - `COMMON_LINK` 
+
 then 
 ```shell 
 yarn deploy

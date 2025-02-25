@@ -34,7 +34,6 @@ struct InitNFTBodyVals {
 
 struct InitNFTBodyDict { 
     amount: Int as coins;
-    index: Int as uint64;
     owner: Address;
     content: Cell;
 }
