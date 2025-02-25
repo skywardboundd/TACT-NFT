@@ -587,26 +587,50 @@ describe("NFT Collection Contract", () => {
                 deployList: beginCell().storeDictDirect(dct).endCell(),
             }
             
-            const trxResult = await collectionNFT.send(sender.getSender(), {value: 10000000000n * (count + 10n) }, batchMintNFT);
+            const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("100") * (count + 10n) }, batchMintNFT);
             return trxResult;
         };
-    
+        beforeEach(async () => {});
+        
+        it("test max batch mint", async () => {
+            let L = 1n;
+            let R = 250n;
+            while(R - L > 1) { 
+                let M = (L + R) / 2n;
+                let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, M);
+                try{ 
+                    expect(trxResult.transactions).toHaveTransaction({
+                        from: owner.address,
+                        to: collectionNFT.address,
+                        success: true,
+                    });
+                    L = M;
+                }
+                catch { 
+                    R = M;
+                }
+            }
+            console.log("maximum batch amount is", L);
+        });
+        
+        
         it("Should batch mint correctly", async () => { 
-            let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 10n);
+            let count = 100n;
+            let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, count);
     
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: collectionNFT.address,
                 success: true,
             });
-            itemNFT = blockchain.openContract(await NFTItem.fromInit(9n, collectionNFT.address));
+            itemNFT = blockchain.openContract(await NFTItem.fromInit(count - 1n, collectionNFT.address));
             
             // it was deployed, that's why we can get it
-            expect(await itemNFT.getGetNftData()).toHaveProperty('itemIndex', 9n);
+            expect(await itemNFT.getGetNftData()).toHaveProperty('itemIndex', count - 1n);
         });
     
         it("Shouldn't batch mint more than 250 items", async () => { 
-            let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 251n);
+            let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 260n);
             
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
