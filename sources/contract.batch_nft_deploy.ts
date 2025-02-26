@@ -64,7 +64,10 @@ export const dictDeployNFTItem = {
     let deployItemAmount = toNano("0.005");
     let deployAmount = toNano("0.1");
     
-    let nextItemIndex = 0n;
+    let contract = await NFTCollection.fromAddress(address(addressNFTCollection));
+    let contract_open = await client4.open(contract);
+    let nextItemIndex: bigint = (await contract_open.getGetCollectionData()).nextItemIndex;
+
 
     // send a message on new address contract to deploy it
     let seqno: number = await deployer_wallet_contract.getSeqno();

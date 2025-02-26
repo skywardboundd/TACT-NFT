@@ -60,7 +60,7 @@ const sendTransfer = async (
         queryId: 0n,
         newOwner: newOwner,
         responseDestination: responseDestination,
-        customPayload: null,
+        customPayload: null, // we don't use it in contract 
         forwardAmount: forwardAmount,
         forwardPayload: forwardPayload,
     };
@@ -76,8 +76,6 @@ function loadGetterTupleNFTData(source: TupleItem[]): NFTData {
     let _content = (source[4] as TupleItemCell).cell;
     return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
-
-
 
 const Op = {
     transferNFT: 0x5fcc3d14,
@@ -96,7 +94,7 @@ const Op = {
 NFTItem.prototype.getOwner = async function (this: NFTItem, provider: ContractProvider): Promise<Address | null> {
     let res = await this.getGetNftData(provider);
     return res.owner;
-};
+}; 
 
 describe("NFT Item Contract", () => {
     let blockchain: Blockchain;
@@ -106,15 +104,13 @@ describe("NFT Item Contract", () => {
     let defaultContent: Cell;
     let emptyAddress: Address | null;
     
-
-    
     beforeEach(async () => {
         blockchain = await Blockchain.create();
         owner = await blockchain.treasury("owner");
         notOwner = await blockchain.treasury('notOwner');
 
         emptyAddress = null
-        defaultContent = beginCell().storeRef(beginCell().endCell()).endCell();
+        defaultContent = Cell.fromBase64("te6ccgEBAQEAAgAAAA=="); // just some content ( doesn't matter )
 
         itemNFT = blockchain.openContract(await NFTItem.fromInit(0n, owner.address));
         let deployItemMsg: InitNFTBody = {
@@ -193,22 +189,23 @@ describe("NFT Item Contract", () => {
             //     Now let's try forward_amount exactly equal to balance and fwd_fee 0
             //  1 TON Balance forward_amount:1 TON fwd_fee:0 (just add to transfer value) verifying that minimal storage comes into play
             //  Should fail with no actions
+
+            // [] and {} just kinds of () for more understandable description
             
-            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance);
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance); // balance + 1ton + fwd - (1ton + balance) = [0] + {fwdFee} and [0] < [minTonsForStorage] 
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
                 success: false,
-                exitCode: 402, // rest amount < min_storage_fee
+                exitCode: 402, // rest amount = 0 < min_storage_fee
             });
         });
         it("test transfer forward fee 2.0", async () => {
             // Let's verify that storage fee was an error trigger by increasing balance by min_storage
             // Expect success
 
-            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + minTonsForStorage + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance);
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + minTonsForStorage + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance); // balance + 1ton + minTonsForStorage + fwdFee - (1ton + balance) = [minTonsForStorage] + {fwdFee}
             
-            // console.log(balance);
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
@@ -216,7 +213,7 @@ describe("NFT Item Contract", () => {
             }); 
         });
         
-        fwdFee = 623605n;
+        fwdFee = 623605n; // just run test & dump it 
         it("test transfer forward fee single", async () => {
             // If transfer is successfull NFT supposed to send up to 2 messages
             // 1)To the owner_address with forward_amount of coins
@@ -224,7 +221,7 @@ describe("NFT Item Contract", () => {
             // Each of those messages costs fwd_fee
             // In this case we test scenario where only single message required to be sent
 
-            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice()); // balance + 1ton + fwdFee - (1ton + balance - minTonsForStorage) = [minTonsForStorage]  + {fwdFee}
 
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
@@ -236,7 +233,7 @@ describe("NFT Item Contract", () => {
 
         describe("test transfer forward fee double", () => {
             beforeEach(async () => {
-                fwdFee = 729606n;
+                fwdFee = 729606n; // just run test & dump it 
             });
             it("should false with only one fwd fee on balance", async () => {
                 // If transfer is successfull NFT supposed to send up to 2 messages
@@ -248,6 +245,7 @@ describe("NFT Item Contract", () => {
 
                 let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, owner.address, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
         
+                // 1ton + fwdFee - (1ton + balance - minTonsForStorage) = [minTonsForStorage] + {fwdFee} and {fwdFee} < {2 * fwdFee}
                 expect(trxResult.transactions).toHaveTransaction({
                     from: owner.address,
                     to: itemNFT.address,   
@@ -258,7 +256,8 @@ describe("NFT Item Contract", () => {
 
             // let now check if we have 2 fwdFees on balance 
             it("should work with 2 fwdFee on balance", async () => {
-                let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + 3n * fwdFee, notOwner.address, owner.address, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
+                let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + 2n * fwdFee, notOwner.address, owner.address, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
+                // 1ton + 2 * fwdFee - (1ton + balance - minTonsForStorage) = [minTonsForStorage] + {2 * fwdFee} 
                 expect(trxResult.transactions).toHaveTransaction({
                     from: owner.address,
                     to: itemNFT.address,
@@ -366,6 +365,7 @@ describe("NFT Collection Contract", () => {
     let defaultContent: Cell;
     let defaultCommonContent: Cell;
     let defaultCollectionContent: Cell;
+    let defaultNFTContent: Cell;
     let royaltyParams: RoyaltyParams;
 
     beforeEach(async () => {
@@ -375,6 +375,8 @@ describe("NFT Collection Contract", () => {
     
             defaultCommonContent = beginCell().storeStringTail("common").endCell();
             defaultCollectionContent = beginCell().storeStringTail("collectioncontent").endCell();
+
+            defaultNFTContent = beginCell().storeStringTail("1.json").endCell();
 
             defaultContent = beginCell().storeRef(defaultCollectionContent).storeRef(defaultCommonContent).endCell();
                 
@@ -460,12 +462,11 @@ describe("NFT Collection Contract", () => {
         });
         
         const deployNFT = async (itemIndex: bigint, collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>): Promise<[SandboxContract<NFTItem>, any]>  => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
             
             let initNFTBody: InitNFTBody = {
                 $$type: 'InitNFTBody',
                 owner: owner.address,
-                content: content
+                content: defaultNFTContent
             }
     
             let mintMsg: DeployNFT = {
@@ -483,13 +484,12 @@ describe("NFT Collection Contract", () => {
         };
     
         it("should mint NFTItem correctly", async () => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
             let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
             
             let [itemNFT, trx] = await deployNFT(nextItemIndex, collectionNFT, owner, owner);
             let nftData = await itemNFT.getGetNftData();
             
-            expect(nftData.content).toEqualCell(content);
+            expect(nftData.content).toEqualCell(defaultNFTContent);
             expect(nftData.owner).toEqualAddress(owner.address);
             expect(nftData.itemIndex).toBe(nextItemIndex);
             expect(nftData.collectionAddress).toEqualAddress(collectionNFT.address);
@@ -510,8 +510,7 @@ describe("NFT Collection Contract", () => {
         });
     
         it("should not deploy previous nft", async () => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
-    
+
             let nextItemIndex: bigint = await collectionNFT.getNextItemIndex()!!
             for( let i = 0; i < 10; i++) {
                 let [itemNFT, trx] = await deployNFT(nextItemIndex++, collectionNFT, owner, owner);
@@ -557,14 +556,13 @@ describe("NFT Collection Contract", () => {
 
     describe("BATCH MINT TESTS", () => {
         const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint) => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
             let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
             let i: bigint = 0n;
     
             let initNFTBody: InitNFTBody = {
                 $$type: 'InitNFTBody',
                 owner: owner.address,
-                content: content,
+                content: defaultNFTContent,
             }
     
             while (i < count) {
@@ -624,7 +622,7 @@ describe("NFT Collection Contract", () => {
             expect(await itemNFT.getGetNftData()).toHaveProperty('itemIndex', count - 1n);
         });
     
-        // this test doesn't make sense because we can only mint 130 in func & 72 on tact 1.5.3 ( 128 in tact 1.6 dev vers ) 
+        // this test doesn't make sense because we can only mint 130 in func & 72 on tact 1.5.4 ( 128 in tact 1.6 dev vers ) 
         it("Shouldn't batch mint more than 250 items", async () => {
             let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 260n);
             

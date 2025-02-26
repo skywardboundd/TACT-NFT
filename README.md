@@ -97,11 +97,9 @@ yarn test
 7) Get nextItemIndex in hashmap, not deleteGetMin
 8) Send excess message after nft deploy to notify new owner ( how in transfer )
 
-Code with some of this opportunities in `tact-standard` branch, this code have another exitCodes but same core functionality 
+Code with some of this opportunities in `tact-standard` branch, this code have another exitCodes but same core functionality, it can batch deploy 
 
-## Some bags ( or fithes :) ) 
-1) TACT can have only 2 references in root of c4, can't have more 
-2) in Init any `Int as uintX` or smth like that always saves as uint257, have to fix .ts files 
+btw new code can batch deploy 142 items in 1.6 dev tact vs 130 on func originals 
 
 ## License
 

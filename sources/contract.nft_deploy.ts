@@ -1,7 +1,7 @@
 import { beginCell, contractAddress, toNano, TonClient4, WalletContractV4, internal, fromNano, Cell, address } from "@ton/ton";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 
-import { NFTCollection, RoyaltyParams, DeployNFT, InitNFTBody, storeInitNFTBody } from "./output/NFT_NFTCollection";
+import { NFTCollection, DeployNFT, InitNFTBody, storeInitNFTBody } from "./output/NFT_NFTCollection";
 
 import * as dotenv from "dotenv";
 import { NFTItem, storeDeployNFT } from "./output/NFT_NFTItem";
@@ -45,7 +45,10 @@ dotenv.config();
     let addressNFTCollection = process.env.COLLECTION_ADDRESS!!.toString();
     let deployAmount = toNano("0.01");
     
-    let nextItemIndex = 0n;
+    let contract = await NFTCollection.fromAddress(address(addressNFTCollection));
+    let contract_open = await client4.open(contract);
+    let nextItemIndex: bigint = (await contract_open.getGetCollectionData()).nextItemIndex;
+
 
     // send a message on new address contract to deploy it
     let seqno: number = await deployer_wallet_contract.getSeqno();
