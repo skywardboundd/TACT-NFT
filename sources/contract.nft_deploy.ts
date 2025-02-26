@@ -43,7 +43,7 @@ dotenv.config();
     // NOTICE: the parameters inside the init functions were the input for the contract address
     // which means any changes will change the smart contract address as well=
     let addressNFTCollection = process.env.COLLECTION_ADDRESS!!.toString();
-    let deployAmount = toNano("0.01");
+    let deployAmount = toNano("0.05");
     
     let contract = await NFTCollection.fromAddress(address(addressNFTCollection));
     let contract_open = await client4.open(contract);
@@ -62,7 +62,7 @@ dotenv.config();
     console.log("Deploying collection");
 
     let owner = deployer_wallet_contract.address;
-    let content = beginCell().storeStringTail(nextItemIndex.toString() + ".json").endCell();
+    let content = beginCell().storeStringTail(nextItemIndex.toString() + "/meta.json").endCell();
 
     console.log(content.toBoc().toString('hex'));
 
