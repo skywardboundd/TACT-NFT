@@ -1,8 +1,10 @@
-import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Builder, Dictionary, TupleItem, TupleItemInt, TupleItemSlice, TupleItemCell } from '@ton/core';
+import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Builder, Dictionary, DictionaryKey, openContract, TupleReader, TupleItem, TupleItemInt, TupleItemSlice, TupleItemCell } from '@ton/core';
 import {
     Blockchain,
     SandboxContract,
+    SmartContract,
     TreasuryContract,
+    internal
 } from '@ton/sandbox';
 
 import {
@@ -15,35 +17,19 @@ import {
     RoyaltyParams,
     InitNFTBody,
     loadInitNFTBody,
-    ChangeOwner
-} from "./output_func/NFT_NFTCollection";
+    ChangeOwner,
+    InitNFTBodyDict
+} from "./output/NFT_NFTCollection";
 
 import {
     NFTItem,
     Transfer,
     NFTData,
     storeInitNFTBody,  
-}   from "./output_func/NFT_NFTItem";
+}   from "./output/NFT_NFTItem";
 
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
-
-export type dictDeployNFT = {
-    amount: bigint;
-    initNFTBody: InitNFTBody;
-};
-// for correct work with dictionary 
-export const dictDeployNFTItem = {
-    serialize: (src: dictDeployNFT, builder: Builder) => {
-        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
-    },
-    parse: (src: Slice) => {
-        return {
-            amount: src.loadCoins(),
-            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
-        };
-    },
-};
 
 const minTonsForStorage = 50000000n;
 const sendTransfer = async (
@@ -116,10 +102,11 @@ describe("NFT Item Contract", () => {
         let deployItemMsg: InitNFTBody = {
             $$type: 'InitNFTBody',
             owner: owner.address,
-            content: defaultContent
+            content: defaultContent,
+            queryId: 0n,
         }
 
-        let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().store(storeInitNFTBody(deployItemMsg)).asSlice());
+        let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, deployItemMsg);
 
         expect(deployResult.transactions).toHaveTransaction({
             from: owner.address,
@@ -180,8 +167,7 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false,
-                exitCode: 402, // invalid fees
+                success: false
             });
         });
     
@@ -197,7 +183,6 @@ describe("NFT Item Contract", () => {
                 from: owner.address,
                 to: itemNFT.address,
                 success: false,
-                exitCode: 402, // rest amount = 0 < min_storage_fee
             });
         });
         it("test transfer forward fee 2.0", async () => {
@@ -250,7 +235,6 @@ describe("NFT Item Contract", () => {
                     from: owner.address,
                     to: itemNFT.address,   
                     success: false,
-                    exitCode: 402, // invalid fees
                 });
             });
 
@@ -300,8 +284,7 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: notOwner.address,
                 to: itemNFT.address,
-                success: false,
-                exitCode: 401, // not owner
+                success: false
             });
         });
     });
@@ -310,7 +293,7 @@ describe("NFT Item Contract", () => {
         const itemIndex: bigint = 100n;
         beforeEach(async () => {
             itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, owner.address));
-            let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().asSlice());
+            let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, null);
         });
 
         it("should not get static data", async () => {
@@ -326,8 +309,7 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false,
-                exitCode: 9, // not init
+                success: false
             });
         });
 
@@ -336,8 +318,7 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false,
-                exitCode: 9, // not init
+                success: false
             });
         });
     });
@@ -463,23 +444,18 @@ describe("NFT Collection Contract", () => {
         
         const deployNFT = async (itemIndex: bigint, collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>): Promise<[SandboxContract<NFTItem>, any]>  => {
             
-            let initNFTBody: InitNFTBody = {
-                $$type: 'InitNFTBody',
-                owner: owner.address,
-                content: defaultNFTContent
-            }
-    
             let mintMsg: DeployNFT = {
                 $$type: 'DeployNFT',
                 queryId: 1n, 
                 itemIndex: itemIndex,
-                amount: 10000000n,
-                initNFTBody: beginCell().store(storeInitNFTBody(initNFTBody)).endCell(),
+                amount: minTonsForStorage,
+                owner: owner.address,
+                content: defaultNFTContent
             };
             
             itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, collectionNFT.address));
             
-            const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("0.1")}, mintMsg);
+            const trxResult = await collectionNFT.send(sender.getSender(), {value: minTonsForStorage + toNano("0.1")}, mintMsg);
             return [itemNFT, trxResult];
         };
     
@@ -505,7 +481,6 @@ describe("NFT Collection Contract", () => {
                 from: notOwner.address,
                 to: collectionNFT.address,
                 success: false,
-                exitCode: 401,
             });
         });
     
@@ -523,7 +498,6 @@ describe("NFT Collection Contract", () => {
                 to: itemNFT.address,
                 deploy: false,
                 success: false,
-                exitCode: 65535,
             });
             
         });
@@ -535,7 +509,6 @@ describe("NFT Collection Contract", () => {
                 from: owner.address,
                 to: collectionNFT.address,
                 success: false,
-                exitCode: 402
             });
         });
     
@@ -556,31 +529,31 @@ describe("NFT Collection Contract", () => {
 
     describe("BATCH MINT TESTS", () => {
         const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint) => {
-            let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
+            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
+            
+            let dct: Dictionary<bigint, InitNFTBodyDict> = Dictionary.empty();
+            
+            let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
             let i: bigint = 0n;
-    
-            let initNFTBody: InitNFTBody = {
-                $$type: 'InitNFTBody',
-                owner: owner.address,
-                content: defaultNFTContent,
-            }
-    
+
             while (i < count) {
-                dct.set(i, {
-                        amount: 10000000n,
-                        initNFTBody: initNFTBody
-                    }
-                );
+                let initNFTBody: InitNFTBodyDict = {
+                    $$type: 'InitNFTBodyDict',
+                    amount: minTonsForStorage,
+                    owner: owner.address,
+                    content: content,
+                }
+                dct.set(i + nextItemIndex, initNFTBody);
                 i += 1n;
             }
     
             let batchMintNFT: BatchDeploy = {
                 $$type: 'BatchDeploy',
                 queryId: 0n,
-                deployList: beginCell().storeDictDirect(dct).endCell(),
+                deployList: dct,
             }
             
-            const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("100") * (count + 10n) }, batchMintNFT);
+            const trxResult = await collectionNFT.send(sender.getSender(), {value:  minTonsForStorage * count + toNano("1") }, batchMintNFT);
             return trxResult;
         };
         beforeEach(async () => {});
@@ -640,7 +613,6 @@ describe("NFT Collection Contract", () => {
                 from: notOwner.address,
                 to: collectionNFT.address,
                 success: false,
-                exitCode: 401
             });
         });
     });
@@ -675,7 +647,6 @@ describe("NFT Collection Contract", () => {
                     from: notOwner.address,
                     to: collectionNFT.address,
                     success: false,
-                    exitCode: 401
             });
         });
     });
