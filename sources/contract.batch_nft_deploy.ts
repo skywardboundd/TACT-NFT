@@ -62,7 +62,7 @@ export const dictDeployNFTItem = {
     // which means any changes will change the smart contract address as well=
     let addressNFTCollection = process.env.COLLECTION_ADDRESS!!.toString();
     let deployItemAmount = toNano("0.005");
-    let deployAmount = toNano("0.1");
+    let deployAmount = toNano("0.3");
     
     let contract = await NFTCollection.fromAddress(address(addressNFTCollection));
     let contract_open = await client4.open(contract);
