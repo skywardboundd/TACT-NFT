@@ -1,4 +1,4 @@
-import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Builder, Dictionary, DictionaryKey, openContract, TupleReader, TupleItem, TupleItemInt, TupleItemSlice, TupleItemCell } from '@ton/core';
+import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Builder, Dictionary, TupleItem, TupleItemInt, TupleItemSlice, TupleItemCell } from '@ton/core';
 import {
     Blockchain,
     SandboxContract,
@@ -16,24 +16,23 @@ import {
     InitNFTBody,
     loadInitNFTBody,
     ChangeOwner
-} from "./output/NFT_NFTCollection";
+} from "./output_func/NFT_NFTCollection";
 
 import {
     NFTItem,
     Transfer,
     NFTData,
-    loadNFTData,
     storeInitNFTBody,  
-}   from "./output/NFT_NFTItem";
+}   from "./output_func/NFT_NFTItem";
 
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
-import { TonClient } from '@ton/ton';
 
 export type dictDeployNFT = {
     amount: bigint;
     initNFTBody: InitNFTBody;
 };
+// for correct work with dictionary 
 export const dictDeployNFTItem = {
     serialize: (src: dictDeployNFT, builder: Builder) => {
         builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
@@ -61,7 +60,7 @@ const sendTransfer = async (
         queryId: 0n,
         newOwner: newOwner,
         responseDestination: responseDestination,
-        kind: 0n,
+        customPayload: null,
         forwardAmount: forwardAmount,
         forwardPayload: forwardPayload,
     };
@@ -674,14 +673,12 @@ describe("NFT Collection Contract", () => {
     
             const trxResult = await collectionNFT.send(notOwner.getSender(), {value: 100000000n }, changeOwnerMsg);
     
-            expect(trxResult.transactions).toHaveTransaction(
-                {
+            expect(trxResult.transactions).toHaveTransaction({
                     from: notOwner.address,
                     to: collectionNFT.address,
                     success: false,
                     exitCode: 401
-                }
-            );
+            });
         });
     });
 });
