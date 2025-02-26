@@ -94,9 +94,10 @@ yarn test
 4) Using TupleBool 
 5) Either type in TACT
 6) With another way to use addr_none$00 in tact we can delete ? in responceDestination var  
-7) Calculate gasPerItem and require to have in batch deploy count * gasPerItem ( and have in a message count of items, keys can be 1...count, to just iterate, not delete and get min ) 
-8) Send excess message after nft deploy with amount myBalance() - self.minTonsForStorage
-9) Use `trait Ownable` 
+7) Get nextItemIndex in hashmap, not deleteGetMin
+8) Send excess message after nft deploy to notify new owner ( how in transfer )
+
+Code with some of this opportunities in `tact-standard` branch, this code have another exitCodes but same core functionality 
 
 ## Some bags ( or fithes :) ) 
 1) TACT can have only 2 references in root of c4, can't have more 
