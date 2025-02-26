@@ -79,6 +79,8 @@ yarn deploynft
 
 ## Testing
 
+MORE COMMENTS FOR TESTS IN `main` BRANCH
+
 Test TACT contracts with /ouput/ folder, test func contracts with /output_func/ contracts in 
 1) [`contract.spec.ts`](./sources/contract.spec.ts) 
 2) [`NFTCollectionExtension.d.ts`](./sources/utils/NFTCollectionExtension.d.ts) 

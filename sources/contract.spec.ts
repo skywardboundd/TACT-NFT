@@ -164,7 +164,7 @@ describe("NFT Item Contract", () => {
         });
     });
     
-    describe("Transfer ownership reject cases", () => {
+    describe("Transfer ownership Fee cases", () => {
         let balance: bigint;
         let fwdFee = 601206n;             // just run test & dump it 
 
