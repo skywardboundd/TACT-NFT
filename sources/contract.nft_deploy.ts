@@ -1,7 +1,7 @@
 import { beginCell, contractAddress, toNano, TonClient4, WalletContractV4, internal, fromNano, Cell, address } from "@ton/ton";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 
-import { NFTCollection, RoyaltyParams, DeployNFT, NFTInitData, storeNFTInitData } from "./output/NFT_NFTCollection";
+import { NFTCollection, RoyaltyParams, DeployNFT } from "./output/NFT_NFTCollection";
 
 import * as dotenv from "dotenv";
 import { NFTItem, storeDeployNFT } from "./output/NFT_NFTItem";
@@ -45,8 +45,11 @@ dotenv.config();
     let addressNFTCollection = process.env.COLLECTION_ADDRESS!!.toString();
     let deployAmount = toNano("0.01");
     
-    let nextItemIndex = 0n;
+    let contract = await NFTCollection.fromAddress(address(addressNFTCollection));
+    let contract_open = await client4.open(contract);
+    let nextItemIndex: bigint = (await contract_open.getGetCollectionData()).nextItemIndex;
 
+    console.log(nextItemIndex);
     // send a message on new address contract to deploy it
     let seqno: number = await deployer_wallet_contract.getSeqno();
     console.log("🛠️Preparing new outgoing massage from deployment wallet. \n" + deployer_wallet_contract.address);
@@ -58,23 +61,19 @@ dotenv.config();
     console.log("Current deployment wallet balance = ", fromNano(balance).toString(), "💎TON");
     console.log("Deploying collection");
 
-    let ownerAddress = deployer_wallet_contract.address;
+    let owner = deployer_wallet_contract.address;
     let content = beginCell().storeStringTail(nextItemIndex.toString() + ".json").endCell();
 
     console.log(content.toBoc().toString('hex'));
-    
-    let initNFTBody: NFTInitData = {
-        $$type: 'NFTInitData',
-        ownerAddress: ownerAddress,
-        content: content
-    }
+
 
     let msg_body: DeployNFT = {
         $$type: "DeployNFT",
         queryId: 0n,
         itemIndex: nextItemIndex,
         amount: deployAmount,
-        initNFTBody: beginCell().store(storeNFTInitData(initNFTBody)).endCell()
+        owner: owner,
+        content: content,
     }
 
     await deployer_wallet_contract.sendTransfer({
