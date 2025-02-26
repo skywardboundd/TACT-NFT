@@ -13,8 +13,6 @@ import {
     GetRoyaltyParams,
     GetStaticData,
     BatchDeploy,
-    ReportRoyaltyParams,
-    CollectionData,
     storeRoyaltyParams,
     RoyaltyParams,
     InitNFTBody,
@@ -27,13 +25,11 @@ import {
     NFTItem,
     Transfer,
     NFTData,
-    loadNFTData,
     storeInitNFTBody,  
 }   from "./output/NFT_NFTItem";
 
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
-import { TonClient } from '@ton/ton';
 
 export type dictDeployNFT = {
     amount: bigint;
@@ -47,18 +43,18 @@ const sendTransfer = async (
     from: Sender,
     value: bigint,
     newOwner: Address,
-    responceDestination: Address | null,
+    responseDestination: Address | null,
     forwardAmount: bigint,
-    fornwardPayload: Slice = beginCell().storeUint(0, 1).asSlice(),
+    forwardPayload: Slice = beginCell().storeUint(0, 1).asSlice(),
 ) => {
     let msg: Transfer = {
         $$type: 'Transfer',
         queryId: 0n,
         newOwner: newOwner,
-        responseDestination: responceDestination,
+        responseDestination: responseDestination,
         kind: 0n,
         forwardAmount: forwardAmount,
-        forwardPayload: fornwardPayload,
+        forwardPayload: forwardPayload,
     };
 
     return await itemNFT.send(from, { value }, msg);

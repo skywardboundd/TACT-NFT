@@ -68,8 +68,8 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
 
         nativeReserve(0, 4);
 
-        let counter: Int           = self.nextItemIndex;
-        let curr: InitNFTBodyDict? = msg.deployList.get(counter);
+        let counter: Int            = self.nextItemIndex;
+        let curr: InitNFTBodyDict?  = msg.deployList.get(counter);
 
         let check: InitNFTBodyDict? = msg.deployList.get(counter + 249);
         nativeThrowUnless(self.IncorrectAmount, check == null);
