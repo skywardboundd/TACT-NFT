@@ -1,7 +1,7 @@
 import { beginCell, toNano, TonClient4, WalletContractV4, internal, fromNano, address, Slice, Builder, Dictionary } from "@ton/ton";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 
-import { NFTCollection, InitNFTBody, storeInitNFTBody, loadInitNFTBody, BatchDeploy, storeBatchDeploy } from "./output/NFT_NFTCollection";
+import { NFTCollection, InitNFTBodyDict, BatchDeploy, storeBatchDeploy } from "./output/NFT_NFTCollection";
 import * as dotenv from "dotenv";
 dotenv.config();
 
@@ -20,23 +20,7 @@ dotenv.config();
     7. Run this script by "yarn batchdeploynft"
  */
 
-export type dictDeployNFT = {
-    amount: bigint;
-    initNFTBody: InitNFTBody;
-};
-
-export const dictDeployNFTItem = {
-    serialize: (src: dictDeployNFT, builder: Builder) => {
-        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
-    },
-    parse: (src: Slice) => {
-        return {
-            amount: src.loadCoins(),
-            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
-        };
-    },
-};
-
+const minTonsForStorage = 50000000n;
 
 (async () => {
     //create client for testnet sandboxv4 API - alternative endpoint
@@ -60,50 +44,48 @@ export const dictDeployNFTItem = {
     // which means any changes will change the smart contract address as well=
     let addressNFTCollection = process.env.COLLECTION_ADDRESS!!.toString();
     let deployItemAmount = toNano("0.05");
-    let deployAmount = toNano("0.1");
     
     let contract = await NFTCollection.fromAddress(address(addressNFTCollection));
     let contract_open = await client4.open(contract);
     let nextItemIndex: bigint = (await contract_open.getGetCollectionData()).nextItemIndex;
-
-
+    
+    
     // send a message on new address contract to deploy it
     let seqno: number = await deployer_wallet_contract.getSeqno();
     console.log("🛠️Preparing new outgoing massage from deployment wallet. \n" + deployer_wallet_contract.address);
     console.log("Seqno: ", seqno + "\n");
-
+    
     // Get deployment wallet balance
     let balance: bigint = await deployer_wallet_contract.getBalance();
-
+    
     console.log("Current deployment wallet balance = ", fromNano(balance).toString(), "💎TON");
     console.log("Deploying collection");
-
+    
     let owner = deployer_wallet_contract.address;
     
-    let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
+    let dct: Dictionary<bigint, InitNFTBodyDict> = Dictionary.empty();
     
+    let deployAmount = toNano("1");
     let i: bigint = 0n;
     for(i; i < 10n; i++) {
-        let content = beginCell().storeStringTail(nextItemIndex.toString() + ".json").endCell();
+        let content = beginCell().storeStringTail(nextItemIndex.toString() + "/meta.json").endCell();
 
-        let initNFTBody: InitNFTBody = {
-            $$type: 'InitNFTBody',
+        let initNFTBody: InitNFTBodyDict = {
+            $$type: 'InitNFTBodyDict',
+            amount: minTonsForStorage,
             owner: owner,
             content: content,
         }
 
-        dct.set(nextItemIndex, { 
-            amount: deployItemAmount,
-            initNFTBody: initNFTBody
-        });
+        dct.set(nextItemIndex, initNFTBody);
         nextItemIndex += 1n;
     }
 
-    let msg_body: BatchDeploy = {
-        $$type: "BatchDeploy",
+    let batchMintNFT: BatchDeploy = {
+        $$type: 'BatchDeploy',
         queryId: 0n,
-        deployList: beginCell().storeDictDirect(dct).endCell()
-    };
+        deployList: dct,
+    }
 
     await deployer_wallet_contract.sendTransfer({
         seqno,
@@ -112,7 +94,7 @@ export const dictDeployNFTItem = {
             internal({
                 to: addressNFTCollection,
                 value: deployAmount,
-                body: beginCell().store(storeBatchDeploy(msg_body)).endCell()
+                body: beginCell().store(storeBatchDeploy(batchMintNFT)).endCell()
             }),
         ],
     });

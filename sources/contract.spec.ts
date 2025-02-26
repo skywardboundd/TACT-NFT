@@ -1,10 +1,8 @@
-import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Builder, Dictionary, DictionaryKey, openContract, TupleReader, TupleItem, TupleItemInt, TupleItemSlice, TupleItemCell } from '@ton/core';
+import { Address, beginCell, Cell, Slice, ContractProvider, Sender, toNano, Builder, Dictionary, TupleItem, TupleItemInt, TupleItemSlice, TupleItemCell } from '@ton/core';
 import {
     Blockchain,
     SandboxContract,
-    SmartContract,
     TreasuryContract,
-    internal
 } from '@ton/sandbox';
 
 import {
@@ -17,16 +15,15 @@ import {
     RoyaltyParams,
     InitNFTBody,
     loadInitNFTBody,
-    ChangeOwner,
-    InitNFTBodyDict
-} from "./output/NFT_NFTCollection";
+    ChangeOwner
+} from "./output_func/NFT_NFTCollection";
 
 import {
     NFTItem,
     Transfer,
     NFTData,
     storeInitNFTBody,  
-}   from "./output/NFT_NFTItem";
+}   from "./output_func/NFT_NFTItem";
 
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
@@ -35,7 +32,18 @@ export type dictDeployNFT = {
     amount: bigint;
     initNFTBody: InitNFTBody;
 };
-
+// for correct work with dictionary 
+export const dictDeployNFTItem = {
+    serialize: (src: dictDeployNFT, builder: Builder) => {
+        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
+    },
+    parse: (src: Slice) => {
+        return {
+            amount: src.loadCoins(),
+            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
+        };
+    },
+};
 
 const minTonsForStorage = 50000000n;
 const sendTransfer = async (
@@ -52,7 +60,7 @@ const sendTransfer = async (
         queryId: 0n,
         newOwner: newOwner,
         responseDestination: responseDestination,
-        kind: 0n,
+        customPayload: null, // we don't use it in contract 
         forwardAmount: forwardAmount,
         forwardPayload: forwardPayload,
     };
@@ -68,19 +76,6 @@ function loadGetterTupleNFTData(source: TupleItem[]): NFTData {
     let _content = (source[4] as TupleItemCell).cell;
     return { $$type: 'NFTData' as const, init: _init, itemIndex: _index, collectionAddress: _collectionAddress, owner: _owner, content: _content };
 }
-
-export const dictDeployNFTItem = {
-    serialize: (src: dictDeployNFT, builder: Builder) => {
-        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
-    },
-    parse: (src: Slice) => {
-        return {
-            amount: src.loadCoins(),
-            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
-        };
-    },
-};
-
 
 const Op = {
     transferNFT: 0x5fcc3d14,
@@ -99,7 +94,7 @@ const Op = {
 NFTItem.prototype.getOwner = async function (this: NFTItem, provider: ContractProvider): Promise<Address | null> {
     let res = await this.getGetNftData(provider);
     return res.owner;
-};
+}; 
 
 describe("NFT Item Contract", () => {
     let blockchain: Blockchain;
@@ -109,25 +104,22 @@ describe("NFT Item Contract", () => {
     let defaultContent: Cell;
     let emptyAddress: Address | null;
     
-
-    
     beforeEach(async () => {
         blockchain = await Blockchain.create();
         owner = await blockchain.treasury("owner");
         notOwner = await blockchain.treasury('notOwner');
 
         emptyAddress = null
-        defaultContent = beginCell().storeRef(beginCell().endCell()).endCell();
+        defaultContent = Cell.fromBase64("te6ccgEBAQEAAgAAAA=="); // just some content ( doesn't matter )
 
         itemNFT = blockchain.openContract(await NFTItem.fromInit(0n, owner.address));
         let deployItemMsg: InitNFTBody = {
             $$type: 'InitNFTBody',
             owner: owner.address,
-            content: defaultContent,
-            queryId: 0n,
+            content: defaultContent
         }
 
-        let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, deployItemMsg);
+        let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().store(storeInitNFTBody(deployItemMsg)).asSlice());
 
         expect(deployResult.transactions).toHaveTransaction({
             from: owner.address,
@@ -170,10 +162,8 @@ describe("NFT Item Contract", () => {
             to: itemNFT.address,
             success: true,
         });
-
     });
     
-    // TODO fix this tests ( empty address need ) 
     describe("Transfer ownership reject cases", () => {
         let balance: bigint;
         let fwdFee = 601206n;             // just run test & dump it 
@@ -190,7 +180,8 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false
+                success: false,
+                exitCode: 402, // invalid fees
             });
         });
     
@@ -198,21 +189,23 @@ describe("NFT Item Contract", () => {
             //     Now let's try forward_amount exactly equal to balance and fwd_fee 0
             //  1 TON Balance forward_amount:1 TON fwd_fee:0 (just add to transfer value) verifying that minimal storage comes into play
             //  Should fail with no actions
+
+            // [] and {} just kinds of () for more understandable description
             
-            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance);
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance); // balance + 1ton + fwd - (1ton + balance) = [0] + {fwdFee} and [0] < [minTonsForStorage] 
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false
+                success: false,
+                exitCode: 402, // rest amount = 0 < min_storage_fee
             });
         });
         it("test transfer forward fee 2.0", async () => {
             // Let's verify that storage fee was an error trigger by increasing balance by min_storage
             // Expect success
 
-            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + minTonsForStorage + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance);
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + minTonsForStorage + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance); // balance + 1ton + minTonsForStorage + fwdFee - (1ton + balance) = [minTonsForStorage] + {fwdFee}
             
-            // console.log(balance);
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
@@ -220,7 +213,7 @@ describe("NFT Item Contract", () => {
             }); 
         });
         
-        fwdFee = 623605n;
+        fwdFee = 623605n; // just run test & dump it 
         it("test transfer forward fee single", async () => {
             // If transfer is successfull NFT supposed to send up to 2 messages
             // 1)To the owner_address with forward_amount of coins
@@ -228,7 +221,7 @@ describe("NFT Item Contract", () => {
             // Each of those messages costs fwd_fee
             // In this case we test scenario where only single message required to be sent
 
-            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
+            let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, emptyAddress, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice()); // balance + 1ton + fwdFee - (1ton + balance - minTonsForStorage) = [minTonsForStorage]  + {fwdFee}
 
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
@@ -240,7 +233,7 @@ describe("NFT Item Contract", () => {
 
         describe("test transfer forward fee double", () => {
             beforeEach(async () => {
-                fwdFee = 729606n;
+                fwdFee = 729606n; // just run test & dump it 
             });
             it("should false with only one fwd fee on balance", async () => {
                 // If transfer is successfull NFT supposed to send up to 2 messages
@@ -252,16 +245,19 @@ describe("NFT Item Contract", () => {
 
                 let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + fwdFee, notOwner.address, owner.address, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
         
+                // 1ton + fwdFee - (1ton + balance - minTonsForStorage) = [minTonsForStorage] + {fwdFee} and {fwdFee} < {2 * fwdFee}
                 expect(trxResult.transactions).toHaveTransaction({
                     from: owner.address,
                     to: itemNFT.address,   
-                    success: false
+                    success: false,
+                    exitCode: 402, // invalid fees
                 });
             });
 
             // let now check if we have 2 fwdFees on balance 
             it("should work with 2 fwdFee on balance", async () => {
-                let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + 3n * fwdFee, notOwner.address, owner.address, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
+                let trxResult = await sendTransfer(itemNFT, owner.getSender(), toNano("1") + 2n * fwdFee, notOwner.address, owner.address, toNano("1") + balance - minTonsForStorage, beginCell().storeUint(1, 1).storeStringTail("testing").asSlice());
+                // 1ton + 2 * fwdFee - (1ton + balance - minTonsForStorage) = [minTonsForStorage] + {2 * fwdFee} 
                 expect(trxResult.transactions).toHaveTransaction({
                     from: owner.address,
                     to: itemNFT.address,
@@ -281,7 +277,6 @@ describe("NFT Item Contract", () => {
             expect(oldOwner).toEqualAddress(owner.address);
             let trxRes = await sendTransfer(itemNFT, owner.getSender(), toNano("0.1"), notOwner.address, owner.address, 1n);
     
-            // console.log(trxRes.transactions);
             let newOwner = await itemNFT.getOwner();
             expect(newOwner).toEqualAddress(notOwner.address);
             expect(trxRes.transactions).toHaveTransaction({
@@ -305,7 +300,8 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: notOwner.address,
                 to: itemNFT.address,
-                success: false
+                success: false,
+                exitCode: 401, // not owner
             });
         });
     });
@@ -314,7 +310,7 @@ describe("NFT Item Contract", () => {
         const itemIndex: bigint = 100n;
         beforeEach(async () => {
             itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, owner.address));
-            let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, null);
+            let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().asSlice());
         });
 
         it("should not get static data", async () => {
@@ -330,12 +326,19 @@ describe("NFT Item Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: itemNFT.address,
-                success: false
+                success: false,
+                exitCode: 9, // not init
             });
         });
 
         it("should not get static data message", async () => {
-            
+            let trxResult = await messageGetStaticData(owner, itemNFT);
+            expect(trxResult.transactions).toHaveTransaction({
+                from: owner.address,
+                to: itemNFT.address,
+                success: false,
+                exitCode: 9, // not init
+            });
         });
     });
 });
@@ -350,6 +353,7 @@ NFTCollection.prototype.getOwner = async function (this: NFTCollection, provider
     let res = await this.getGetCollectionData(provider);
     return res.owner;
 };
+
 describe("NFT Collection Contract", () => {
     let blockchain: Blockchain;
     let collectionNFT: SandboxContract<NFTCollection>;
@@ -361,6 +365,7 @@ describe("NFT Collection Contract", () => {
     let defaultContent: Cell;
     let defaultCommonContent: Cell;
     let defaultCollectionContent: Cell;
+    let defaultNFTContent: Cell;
     let royaltyParams: RoyaltyParams;
 
     beforeEach(async () => {
@@ -370,6 +375,8 @@ describe("NFT Collection Contract", () => {
     
             defaultCommonContent = beginCell().storeStringTail("common").endCell();
             defaultCollectionContent = beginCell().storeStringTail("collectioncontent").endCell();
+
+            defaultNFTContent = beginCell().storeStringTail("1.json").endCell();
 
             defaultContent = beginCell().storeRef(defaultCollectionContent).storeRef(defaultCommonContent).endCell();
                 
@@ -455,31 +462,34 @@ describe("NFT Collection Contract", () => {
         });
         
         const deployNFT = async (itemIndex: bigint, collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>): Promise<[SandboxContract<NFTItem>, any]>  => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
+            
+            let initNFTBody: InitNFTBody = {
+                $$type: 'InitNFTBody',
+                owner: owner.address,
+                content: defaultNFTContent
+            }
     
             let mintMsg: DeployNFT = {
                 $$type: 'DeployNFT',
                 queryId: 1n, 
                 itemIndex: itemIndex,
-                amount: minTonsForStorage,
-                owner: owner.address,
-                content: content
+                amount: 10000000n,
+                initNFTBody: beginCell().store(storeInitNFTBody(initNFTBody)).endCell(),
             };
             
             itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, collectionNFT.address));
             
-            const trxResult = await collectionNFT.send(sender.getSender(), {value: minTonsForStorage + toNano("0.1")}, mintMsg);
+            const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("0.1")}, mintMsg);
             return [itemNFT, trxResult];
         };
     
         it("should mint NFTItem correctly", async () => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
             let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
             
             let [itemNFT, trx] = await deployNFT(nextItemIndex, collectionNFT, owner, owner);
             let nftData = await itemNFT.getGetNftData();
             
-            expect(nftData.content).toEqualCell(content);
+            expect(nftData.content).toEqualCell(defaultNFTContent);
             expect(nftData.owner).toEqualAddress(owner.address);
             expect(nftData.itemIndex).toBe(nextItemIndex);
             expect(nftData.collectionAddress).toEqualAddress(collectionNFT.address);
@@ -494,26 +504,26 @@ describe("NFT Collection Contract", () => {
             expect(trx.transactions).toHaveTransaction({
                 from: notOwner.address,
                 to: collectionNFT.address,
-                success: false
+                success: false,
+                exitCode: 401,
             });
         });
     
         it("should not deploy previous nft", async () => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
-    
-            let nextItemIndex = await collectionNFT.getNextItemIndex()!!
+
+            let nextItemIndex: bigint = await collectionNFT.getNextItemIndex()!!
             for( let i = 0; i < 10; i++) {
                 let [itemNFT, trx] = await deployNFT(nextItemIndex++, collectionNFT, owner, owner);
             }
     
             let [itemNFT, trx] = await deployNFT(0n, collectionNFT, owner, owner);
             
-            // console.log(trx.transactions);
             expect(trx.transactions).toHaveTransaction({
                 from: collectionNFT.address,
                 to: itemNFT.address,
                 deploy: false,
-                success: false
+                success: false,
+                exitCode: 65535,
             });
             
         });
@@ -524,7 +534,8 @@ describe("NFT Collection Contract", () => {
             expect(trx.transactions).toHaveTransaction({
                 from: owner.address,
                 to: collectionNFT.address,
-                success: false
+                success: false,
+                exitCode: 402
             });
         });
     
@@ -545,36 +556,35 @@ describe("NFT Collection Contract", () => {
 
     describe("BATCH MINT TESTS", () => {
         const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint) => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
-            
-            let dct: Dictionary<bigint, InitNFTBodyDict> = Dictionary.empty();
-            
-            let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
+            let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
             let i: bigint = 0n;
-
+    
+            let initNFTBody: InitNFTBody = {
+                $$type: 'InitNFTBody',
+                owner: owner.address,
+                content: defaultNFTContent,
+            }
+    
             while (i < count) {
-                let initNFTBody: InitNFTBodyDict = {
-                    $$type: 'InitNFTBodyDict',
-                    amount: minTonsForStorage,
-                    owner: owner.address,
-                    content: content,
-                }
-                dct.set(i + nextItemIndex, initNFTBody);
+                dct.set(i, {
+                        amount: 10000000n,
+                        initNFTBody: initNFTBody
+                    }
+                );
                 i += 1n;
             }
     
             let batchMintNFT: BatchDeploy = {
                 $$type: 'BatchDeploy',
                 queryId: 0n,
-                deployList: dct,
+                deployList: beginCell().storeDictDirect(dct).endCell(),
             }
             
-            const trxResult = await collectionNFT.send(sender.getSender(), {value:  minTonsForStorage * count + toNano("1") }, batchMintNFT);
+            const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("100") * (count + 10n) }, batchMintNFT);
             return trxResult;
         };
-
-        beforeEach(async () => {}); // make separate test
-    
+        beforeEach(async () => {});
+        
         it("test max batch mint", async () => {
             let L = 1n;
             let R = 250n;
@@ -596,6 +606,7 @@ describe("NFT Collection Contract", () => {
             console.log("maximum batch amount is", L);
         });
         
+        
         it("Should batch mint correctly", async () => { 
             let count = 50n;
             let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, count);
@@ -606,21 +617,21 @@ describe("NFT Collection Contract", () => {
                 success: true,
             });
             itemNFT = blockchain.openContract(await NFTItem.fromInit(count - 1n, collectionNFT.address));
-            // console.log(trxResult.transactions);
+            
             // it was deployed, that's why we can get it
             expect(await itemNFT.getGetNftData()).toHaveProperty('itemIndex', count - 1n);
         });
     
-        it("Shouldn't batch mint more than 250 items", async () => { 
-            let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 251n);
+        // this test doesn't make sense because we can only mint 130 in func & 72 on tact 1.5.4 ( 128 in tact 1.6 dev vers ) 
+        it("Shouldn't batch mint more than 250 items", async () => {
+            let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 260n);
             
             expect(trxResult.transactions).toHaveTransaction({
                 from: owner.address,
                 to: collectionNFT.address,
                 success: false
-            }); 
+            }); // in orig func contracts exit code -14, but it throw in code 399 ( we can just check )
         });
-
     
         it('Should not batch mint not owner', async () => {
             let trxResult = await batchMintNFTProcess(collectionNFT, notOwner, owner, 10n);
@@ -628,7 +639,8 @@ describe("NFT Collection Contract", () => {
             expect(trxResult.transactions).toHaveTransaction({
                 from: notOwner.address,
                 to: collectionNFT.address,
-                success: false
+                success: false,
+                exitCode: 401
             });
         });
     });
@@ -643,13 +655,11 @@ describe("NFT Collection Contract", () => {
     
             const trxResult = await collectionNFT.send(owner.getSender(), {value: 100000000n }, changeOwnerMsg);
     
-            expect(trxResult.transactions).toHaveTransaction(
-                {
+            expect(trxResult.transactions).toHaveTransaction({
                     from: owner.address,
                     to: collectionNFT.address,
                     success: true,
-                }
-            );
+            });
             expect(await collectionNFT.getOwner()).toEqualAddress(notOwner.address);
         });
         it("Not owner should not be able to transfer ownership", async () => { 
@@ -661,13 +671,12 @@ describe("NFT Collection Contract", () => {
     
             const trxResult = await collectionNFT.send(notOwner.getSender(), {value: 100000000n }, changeOwnerMsg);
     
-            expect(trxResult.transactions).toHaveTransaction(
-                {
+            expect(trxResult.transactions).toHaveTransaction({
                     from: notOwner.address,
                     to: collectionNFT.address,
-                    success: false
-                }
-            );
+                    success: false,
+                    exitCode: 401
+            });
         });
     });
 });
