@@ -22,7 +22,6 @@ Once you've built our contract, you can deploy it:
 ```shell
 yarn deploy
 ```
-
 Let's look at some other useful commands.
 
 To test TACT contracts run:

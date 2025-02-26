@@ -465,14 +465,14 @@ describe("NFT Collection Contract", () => {
                 $$type: 'DeployNFT',
                 queryId: 1n, 
                 itemIndex: itemIndex,
-                amount: 10000000n,
+                amount: minTonsForStorage,
                 owner: owner.address,
                 content: content
             };
             
             itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, collectionNFT.address));
             
-            const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("0.1")}, mintMsg);
+            const trxResult = await collectionNFT.send(sender.getSender(), {value: minTonsForStorage + toNano("0.1")}, mintMsg);
             return [itemNFT, trxResult];
         };
     
@@ -559,7 +559,7 @@ describe("NFT Collection Contract", () => {
             while (i < count) {
                 let initNFTBody: InitNFTBodyDict = {
                     $$type: 'InitNFTBodyDict',
-                    amount: 10000000n,
+                    amount: minTonsForStorage,
                     owner: owner.address,
                     content: content,
                 }
@@ -573,7 +573,7 @@ describe("NFT Collection Contract", () => {
                 deployList: dct,
             }
             
-            const trxResult = await collectionNFT.send(sender.getSender(), {value: 1000000000000n * (count + 10n) }, batchMintNFT);
+            const trxResult = await collectionNFT.send(sender.getSender(), {value:  minTonsForStorage * count + toNano("1") }, batchMintNFT);
             return trxResult;
         };
 
