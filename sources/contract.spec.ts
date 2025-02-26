@@ -312,8 +312,6 @@ describe("NFT Item Contract", () => {
                 success: false
             });
         });
-
-        it("should transfer ownership correctly", async () => {});
     });
 
     describe("NOT INITIALIZED TESTS", () => {
