@@ -26,7 +26,7 @@ import { NFTCollection, RoyaltyParams } from "./output/NFT_NFTCollection";
     let init = await NFTCollection.init(owner, nextItemIndex, defaultContent, royaltyParams);
     let contract_address = contractAddress(0, init);
 
-    // Prepareing
+    // Preparing
     console.log("Reading Contract Info...");
     console.log(contract_address);
 
