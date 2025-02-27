@@ -31,12 +31,6 @@ To test TACT contracts run:
 yarn test
 ```
 
-To test func contracts change output folder in contract.spec.ts imports,to output_func and then 
-```shell
-yarn test 
-``` 
-
-
 If you want to quickly check your changes for validity, run:
 
 ```shell
@@ -57,7 +51,6 @@ yarn deploy
 
 To deploy NFT Item follow some instructions in [`contract.deploy_nft.ts`](./sources/contract.nft_deploy.ts) and define in `.env`
 - `COLLECTION_ADDRESS`
-- `NEXT_ITEM_INDEX`
 
 then 
 ```shell 

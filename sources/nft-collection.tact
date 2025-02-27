@@ -39,7 +39,7 @@ contract NFTCollection with ExitCodes, GasConstants {
         });
     }
 
-    receive() {} // igrore empty messages
+    receive() {} // ignore empty messages
     
     receive(msg: GetRoyaltyParams) {
         send(SendParameters{
