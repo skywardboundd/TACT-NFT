@@ -11,7 +11,7 @@ dotenv.config();
     Here are the instructions to deploy the contract:
     1. Create new walletV4r2 or use existing one.
     2. Enter your mnemonics in .env file.
-    3. On line 35 select the network you want to deploy the contract.
+    3. On line 28 select the network you want to deploy the contract.
     (// - comments out the line, so you can switch between networks)
     (testnet is chosen by default, if you are not familiar with it, read https://tonkeeper.helpscoutdocs.com/article/100-how-switch-to-the-testnet)
     4. Change content according to standard https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md 
