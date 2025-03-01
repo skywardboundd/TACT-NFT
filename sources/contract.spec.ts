@@ -553,7 +553,7 @@ describe("NFT Collection Contract", () => {
                 deployList: dct,
             }
             
-            const trxResult = await collectionNFT.send(sender.getSender(), {value:  minTonsForStorage * count + toNano("1") }, batchMintNFT);
+            const trxResult = await collectionNFT.send(sender.getSender(), {value:  minTonsForStorage * count + toNano("100") }, batchMintNFT);
             return trxResult;
         };
         beforeEach(async () => {});
