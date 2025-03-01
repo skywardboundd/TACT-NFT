@@ -25,17 +25,14 @@ contract NFTCollection with ExitCodes, GasConstants {
         self.royaltyParams = royaltyParams;
     }
     
-    fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell) {
-        let stateInit: StateInit = initOf NFTItem(itemIndex, myAddress());
-        let nftAddress: Address  = contractAddress(stateInit);
+    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell, code: Cell) {
+        let data: Cell = beginCell().storeUint(0, 1).storeInt(itemIndex, 257).storeAddress(myAddress()).endCell();
 
-        send(SendParameters{
-            to: nftAddress,
+        deploy(DeployParameters{
             value: amount,
             body: initNFTBody,
-            code: stateInit.code,
-            data: stateInit.data,
-            mode: SendPayGasSeparately     
+            init: StateInit{code: code, data: data},
+            mode: SendPayGasSeparately 
         });
     }
 
@@ -58,7 +55,8 @@ contract NFTCollection with ExitCodes, GasConstants {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner); 
         nativeThrowUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
 
-        self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody); 
+        let stateInit: StateInit = initOf NFTItem(0, myAddress());
+        self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody, stateInit.code); 
 
         if(msg.itemIndex == self.nextItemIndex) {
             self.nextItemIndex += 1;
@@ -70,6 +68,7 @@ contract NFTCollection with ExitCodes, GasConstants {
 
         let counter: Int     = 0;
         let curr: DictDelete = deleteGetMin(msg.deployList, 64);
+        let stateInit: StateInit = initOf NFTItem(0, myAddress());
 
         while (curr.flag != 0) {
             counter += 1;
@@ -77,7 +76,7 @@ contract NFTCollection with ExitCodes, GasConstants {
             nativeThrowIf(self.IncorrectAmount, counter >= 250);
             nativeThrowUnless(self.IncorrectIndexes + counter, curr.itemIndex!! <= self.nextItemIndex);
 
-            self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef());
+            self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef(), stateInit.code);
             if (curr.itemIndex!! == self.nextItemIndex) {
                 self.nextItemIndex += 1;
             }

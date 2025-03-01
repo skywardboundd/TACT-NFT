@@ -101,5 +101,8 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
             content: self.content
         };
     }
+    get fun balance(): Int{
+        return 0;
+    }
 }
 
