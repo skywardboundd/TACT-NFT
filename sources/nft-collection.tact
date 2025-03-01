@@ -16,19 +16,15 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
         self.royaltyParams = royaltyParams;
     }
     
-    fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: InitNFTBody) {
-        let stateInit: StateInit = initOf NFTItem(itemIndex, myAddress());
-        let nftAddress: Address  = contractAddress(stateInit);
+    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: InitNFTBody, code: Cell) {
+        let data: Cell = beginCell().storeUint(0, 1).storeInt(itemIndex, 257).storeAddress(myAddress()).endCell();
 
-        nativeThrowUnless(self.IncorrectAmountWithDeploy, amount >= self.minTonsForStorage);
-        send(SendParameters{
-            to: nftAddress,
+        deploy(DeployParameters{
             value: amount,
             body: initNFTBody.toCell(),
-            code: stateInit.code,
-            data: stateInit.data,
+            init: StateInit{code: code, data: data},
             mode: SendPayGasSeparately     
-        });
+        })
     }
 
     receive() {} // igrore empty messages
@@ -56,7 +52,9 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             content: msg.content
         };
 
-        self.deployNFTItem(msg.itemIndex, msg.amount, initNFTBody); 
+        let stateInit: StateInit = initOf NFTItem(0, myAddress());
+
+        self.deployNFTItem(msg.itemIndex, msg.amount, initNFTBody, stateInit.code); 
 
         if(msg.itemIndex == self.nextItemIndex) {
             self.nextItemIndex += 1;
@@ -72,6 +70,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
         let curr: InitNFTBodyDict?  = msg.deployList.get(counter);
 
         let check: InitNFTBodyDict? = msg.deployList.get(counter + 249);
+        let stateInit: StateInit = initOf NFTItem(0, myAddress());
         nativeThrowUnless(self.IncorrectAmount, check == null);
         while (curr != null) {
             nativeThrowUnless(self.IncorrectIndexes + counter, counter <= self.nextItemIndex); 
@@ -82,7 +81,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
                 content: curr!!.content
             };
 
-            self.deployNFTItem(counter, curr!!.amount, initNFTBody);
+            self.deployNFTItem(counter, curr!!.amount, initNFTBody, stateInit.code);
             
             counter += 1;
             self.nextItemIndex += 1;
