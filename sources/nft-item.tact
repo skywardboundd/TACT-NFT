@@ -11,7 +11,7 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
     owner: Address? = null;
     content: Cell?  = null;
 
-    init(itemIndex: Int, collectionAddress: Address) {
+    init(collectionAddress: Address, itemIndex: Int) {
         self.itemIndex         = itemIndex;
         self.collectionAddress = collectionAddress;
     }
