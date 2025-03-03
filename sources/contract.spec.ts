@@ -16,14 +16,14 @@ import {
     InitNFTBody,
     loadInitNFTBody,
     ChangeOwner
-} from "./output_func/NFT_NFTCollection";
+} from "./output/NFT_NFTCollection";
 
 import {
     NFTItem,
     Transfer,
     NFTData,
     storeInitNFTBody,  
-}   from "./output_func/NFT_NFTItem";
+}   from "./output/NFT_NFTItem";
 
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
@@ -112,7 +112,7 @@ describe("NFT Item Contract", () => {
         emptyAddress = null
         defaultContent = Cell.fromBase64("te6ccgEBAQEAAgAAAA=="); // just some content ( doesn't matter )
 
-        itemNFT = blockchain.openContract(await NFTItem.fromInit(0n, owner.address));
+        itemNFT = blockchain.openContract(await NFTItem.fromInit(owner.address, 0n));
         let deployItemMsg: InitNFTBody = {
             $$type: 'InitNFTBody',
             owner: owner.address,
@@ -309,7 +309,7 @@ describe("NFT Item Contract", () => {
     describe("NOT INITIALIZED TESTS", () => {
         const itemIndex: bigint = 100n;
         beforeEach(async () => {
-            itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, owner.address));
+            itemNFT = blockchain.openContract(await NFTItem.fromInit(owner.address, itemIndex));
             let deployResult = await itemNFT.send(owner.getSender(), {value: toNano("0.1")}, beginCell().asSlice());
         });
 
@@ -477,7 +477,7 @@ describe("NFT Collection Contract", () => {
                 initNFTBody: beginCell().store(storeInitNFTBody(initNFTBody)).endCell(),
             };
             
-            itemNFT = blockchain.openContract(await NFTItem.fromInit(itemIndex, collectionNFT.address));
+            itemNFT = blockchain.openContract(await NFTItem.fromInit(collectionNFT.address, itemIndex));
             
             const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("0.1")}, mintMsg);
             return [itemNFT, trxResult];
@@ -616,7 +616,7 @@ describe("NFT Collection Contract", () => {
                 to: collectionNFT.address,
                 success: true,
             });
-            itemNFT = blockchain.openContract(await NFTItem.fromInit(count - 1n, collectionNFT.address));
+            itemNFT = blockchain.openContract(await NFTItem.fromInit(collectionNFT.address, count - 1n));
             
             // it was deployed, that's why we can get it
             expect(await itemNFT.getGetNftData()).toHaveProperty('itemIndex', count - 1n);

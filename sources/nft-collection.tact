@@ -25,8 +25,8 @@ contract NFTCollection with ExitCodes, GasConstants {
         self.royaltyParams = royaltyParams;
     }
     
-    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell, code: Cell) {
-        let data: Cell = beginCell().storeUint(0, 1).storeInt(itemIndex, 257).storeAddress(myAddress()).endCell();
+    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell, code: Cell, commonData: Builder) {
+        let data: Cell = commonData.storeInt(itemIndex, 257).endCell();
 
         deploy(DeployParameters{
             value: amount,
@@ -55,8 +55,10 @@ contract NFTCollection with ExitCodes, GasConstants {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner); 
         nativeThrowUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
 
-        let stateInit: StateInit = initOf NFTItem(0, myAddress());
-        self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody, stateInit.code); 
+        let stateInit: StateInit = initOf NFTItem(myAddress(), 0);
+        let commonData: Builder = beginCell().storeUint(0, 1).storeAddress(myAddress());
+
+        self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody, stateInit.code, commonData); 
 
         if(msg.itemIndex == self.nextItemIndex) {
             self.nextItemIndex += 1;
@@ -68,7 +70,9 @@ contract NFTCollection with ExitCodes, GasConstants {
 
         let counter: Int     = 0;
         let curr: DictDelete = deleteGetMin(msg.deployList, 64);
-        let stateInit: StateInit = initOf NFTItem(0, myAddress());
+
+        let stateInit: StateInit = initOf NFTItem(myAddress(), 0);  
+        let commonData: Builder = beginCell().storeUint(0, 1).storeAddress(myAddress());
 
         while (curr.flag != 0) {
             counter += 1;
@@ -76,7 +80,7 @@ contract NFTCollection with ExitCodes, GasConstants {
             nativeThrowIf(self.IncorrectAmount, counter >= 250);
             nativeThrowUnless(self.IncorrectIndexes + counter, curr.itemIndex!! <= self.nextItemIndex);
 
-            self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef(), stateInit.code);
+            self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef(), stateInit.code, commonData);
             if (curr.itemIndex!! == self.nextItemIndex) {
                 self.nextItemIndex += 1;
             }
@@ -101,7 +105,7 @@ contract NFTCollection with ExitCodes, GasConstants {
     }
 
     get fun get_nft_address_by_index(index: Int): Address {
-        let stateInit = initOf NFTItem(index, myAddress());
+        let stateInit = initOf NFTItem(myAddress(), index);
         return contractAddress(stateInit);
     }
 
