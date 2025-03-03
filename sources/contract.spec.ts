@@ -149,8 +149,9 @@ describe("NFT Item Contract", () => {
         let staticData = await itemNFT.getGetNftData();
         
         expect(staticData.init).toBe(-1n);
-        expect(staticData.owner).toEqualAddress(owner.address);
         expect(staticData.itemIndex).toBe(0n);
+        expect(staticData.collectionAddress).toEqualAddress(owner.address);
+        expect(staticData.owner).toEqualAddress(owner.address);
         expect(staticData.content).toEqualCell(defaultContent);
     });
 
@@ -316,6 +317,7 @@ describe("NFT Item Contract", () => {
         it("should not get static data", async () => {
             let staticData = await itemNFT.getGetNftData();
             expect(staticData.init).toBe(0n);
+            expect(staticData.collectionAddress).toEqualAddress(owner.address)
             expect(staticData.owner).toBeNull();
             expect(staticData.itemIndex).toBe(itemIndex);
             expect(staticData.content).toBeNull();
