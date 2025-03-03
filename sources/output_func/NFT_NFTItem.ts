@@ -1110,7 +1110,7 @@ export class NFTItem implements Contract {
         return await NFTItem_init(itemIndex, collectionAddress);
     }
     
-    static async fromInit(itemIndex: bigint, collectionAddress: Address) {
+    static async fromInit(collectionAddress: Address, itemIndex: bigint) {
         const __gen_init = await NFTItem_init(itemIndex, collectionAddress);
         const address = contractAddress(0, __gen_init);
         return new NFTItem(address, __gen_init);
