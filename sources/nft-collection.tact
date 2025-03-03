@@ -71,9 +71,9 @@ contract NFTCollection with ExitCodes, GasConstants {
     receive(msg: BatchDeploy) {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
 
-        let counter: Int     = 0;
-        let curr: DictDelete = deleteGetMin(msg.deployList, 64);
-        let commonData       = beginCell().storeUint(0, 1).storeAddress(myAddress());
+        let counter: Int        = 0;
+        let curr: DictDelete    = deleteGetMin(msg.deployList, 64);
+        let commonData: Builder = beginCell().storeUint(0, 1).storeAddress(myAddress());
 
         while (curr.flag != 0) {
             counter += 1;
@@ -86,8 +86,7 @@ contract NFTCollection with ExitCodes, GasConstants {
                 self.nextItemIndex += 1;
             }
 
-            msg.deployList = curr.dict;
-            curr           = deleteGetMin(msg.deployList, 64);
+            curr = deleteGetMin(curr.dict, 64);
         }
     }
 
