@@ -778,23 +778,6 @@
   dependencies:
     "@sinonjs/commons" "^3.0.0"
 
-"@tact-lang/compiler@^1.6.0":
-  version "1.6.0"
-  resolved "https://registry.yarnpkg.com/@tact-lang/compiler/-/compiler-1.6.0.tgz#e5ec8fe606d4eca812f5f9042df76dac92ff086e"
-  integrity sha512-rJ6HcBLlk3onyYozX+5rlNMDurUD8TGFirSPeQjlDChPA4tWNolU6NpRNdlFx/Ac0/bCRjMF99UJ8+LRF7oQbQ==
-  dependencies:
-    "@tact-lang/opcode" "^0.3.0"
-    "@ton/core" "0.60.0"
-    "@ton/crypto" "^3.2.0"
-    "@tonstudio/parser-runtime" "^0.0.1"
-    blockstore-core "1.0.5"
-    change-case "^4.1.2"
-    ipfs-unixfs-importer "9.0.10"
-    json-bigint "^1.0.0"
-    ohm-js "^17.1.0"
-    path-normalize "^6.0.13"
-    zod "^3.22.4"
-
 "@tact-lang/compiler@~1.5.1":
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/@tact-lang/compiler/-/compiler-1.5.2.tgz#eece10634091eb31fa2f1b5453ede867cf68af9e"
@@ -813,6 +796,23 @@
     ohm-js "^17.1.0"
     path-normalize "^6.0.13"
     prando "^6.0.1"
+    zod "^3.22.4"
+
+"@tact-lang/compiler@~1.6.0":
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/@tact-lang/compiler/-/compiler-1.6.0.tgz#e5ec8fe606d4eca812f5f9042df76dac92ff086e"
+  integrity sha512-rJ6HcBLlk3onyYozX+5rlNMDurUD8TGFirSPeQjlDChPA4tWNolU6NpRNdlFx/Ac0/bCRjMF99UJ8+LRF7oQbQ==
+  dependencies:
+    "@tact-lang/opcode" "^0.3.0"
+    "@ton/core" "0.60.0"
+    "@ton/crypto" "^3.2.0"
+    "@tonstudio/parser-runtime" "^0.0.1"
+    blockstore-core "1.0.5"
+    change-case "^4.1.2"
+    ipfs-unixfs-importer "9.0.10"
+    json-bigint "^1.0.0"
+    ohm-js "^17.1.0"
+    path-normalize "^6.0.13"
     zod "^3.22.4"
 
 "@tact-lang/deployer@^0.2.0":
@@ -1761,11 +1761,6 @@ dot-case@^3.0.4:
   dependencies:
     no-case "^3.0.4"
     tslib "^2.0.3"
-
-dotenv@^16.4.5:
-  version "16.4.7"
-  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.7.tgz#0e20c5b82950140aa99be360a8a5f52335f53c26"
-  integrity sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==
 
 electron-to-chromium@^1.4.601:
   version "1.4.605"
