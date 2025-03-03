@@ -9,20 +9,26 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
     content: Cell;
     royaltyParams: RoyaltyParams;
 
+    commonCode: Cell;
+    commonData: Builder;
+
     init(owner: Address, nextItemIndex: Int, collectionContent: Cell, royaltyParams: RoyaltyParams) {
         self.owner         = owner;
         self.nextItemIndex = nextItemIndex;
         self.content       = collectionContent;
         self.royaltyParams = royaltyParams;
+
+        self.commonCode    = (initOf NFTItem( myAddress(), 0)).code;
+        self.commonData = beginCell().storeUint(0, 1).storeAddress(myAddress());
     }
     
-    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: InitNFTBody, code: Cell, commondata: Builder) {
-        let data: Cell = commondata.storeInt(itemIndex, 257).endCell();
+    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: InitNFTBody) {
+        let data: Cell = self.commonData.storeInt(itemIndex, 257).endCell();
 
         deploy(DeployParameters{
             value: amount,
             body: initNFTBody.toCell(),
-            init: StateInit{code: code, data: data},
+            init: StateInit{code: self.commonCode, data: data},
             mode: SendPayGasSeparately     
         })
     }
@@ -43,8 +49,10 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
     }
 
     receive(msg: DeployNFT) {
-        nativeThrowUnless(self.IncorrectSender, self.owner == sender());
-        nativeThrowUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
+        throwUnless(self.IncorrectSender, self.owner == sender());
+        throwUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
+
+        nativeReserve(0, 4);
 
         let initNFTBody = InitNFTBody{
             queryId: msg.queryId,
@@ -52,14 +60,13 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             content: msg.content
         };
 
-        let commonCode: Cell = (initOf NFTItem( myAddress(), 0)).code;
-        let commondata: Builder = beginCell().storeUint(0, 1).storeAddress(myAddress());
-
-        self.deployNFTItem(msg.itemIndex, msg.amount, initNFTBody, commonCode, commondata); 
+        self.deployNFTItem(msg.itemIndex, msg.amount, initNFTBody); 
 
         if(msg.itemIndex == self.nextItemIndex) {
             self.nextItemIndex += 1;
         }
+
+        send(SendParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance });
     }
 
     receive(msg: BatchDeploy) {
@@ -68,14 +75,11 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
         nativeReserve(0, 4);
 
         let check: InitNFTBodyDict? = msg.deployList.get(self.nextItemIndex + 249);
-        nativeThrowUnless(self.IncorrectAmount, check == null);
-        
-        let commonsCode: Cell = (initOf NFTItem(myAddress(), 0)).code;
-        let commonData = beginCell().storeUint(0, 1).storeAddress(myAddress());
+        throwUnless(self.IncorrectAmount, check == null);
         
         let curr: InitNFTBodyDict?  = msg.deployList.get(self.nextItemIndex);
         while (curr != null) {
-            nativeThrowUnless(self.IncorrectIndexes + self.nextItemIndex, self.nextItemIndex <= self.nextItemIndex); 
+            throwUnless(self.IncorrectIndexes + self.nextItemIndex, self.nextItemIndex <= self.nextItemIndex); 
             
             let initNFTBody = InitNFTBody {
                 queryId: msg.queryId,
@@ -83,7 +87,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
                 content: curr!!.content
             };
 
-            self.deployNFTItem(self.nextItemIndex, curr!!.amount, initNFTBody, commonsCode, commonData);
+            self.deployNFTItem(self.nextItemIndex, curr!!.amount, initNFTBody);
             
             self.nextItemIndex += 1;
             curr = msg.deployList.get(self.nextItemIndex);
