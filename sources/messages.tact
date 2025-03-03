@@ -25,6 +25,11 @@ struct InitNFTBody {
     content: Cell;
 }
 
+// struct InitNFTBodyDict {
+//     amount: Int as coins;
+//     initNFTBody: Cell; // ^InitNFTBody
+// }
+
 struct CollectionData {
     nextItemIndex: Int as uint64;
     collectionContent: Cell;
@@ -50,7 +55,7 @@ message(1) DeployNFT {
 
 message(2) BatchDeploy {
     queryId: Int as uint64;
-    deployList: Cell; // dict 
+    deployList: Cell; // map<Int as uint64, InitNFTBodyDict> 
 }
 
 message(3) ChangeOwner { 
