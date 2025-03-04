@@ -4,13 +4,14 @@ import "./messages";
 import "./nft-item";
 
 contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferable {
+    commonCode: Cell;
+    commonData: Builder;
+    
     owner: Address;
     nextItemIndex: Int as uint64;
     content: Cell;
     royaltyParams: RoyaltyParams;
 
-    commonCode: Cell;
-    commonData: Builder;
 
     init(owner: Address, nextItemIndex: Int, collectionContent: Cell, royaltyParams: RoyaltyParams) {
         self.owner         = owner;
@@ -19,7 +20,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
         self.royaltyParams = royaltyParams;
 
         self.commonCode    = (initOf NFTItem( myAddress(), 0)).code;
-        self.commonData = beginCell().storeUint(0, 1).storeAddress(myAddress());
+        self.commonData    = beginCell().storeUint(0, 1).storeAddress(myAddress());
     }
     
     inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: InitNFTBody) {
@@ -77,7 +78,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
         let check: InitNFTBodyDict? = msg.deployList.get(self.nextItemIndex + 249);
         throwUnless(self.IncorrectAmount, check == null);
         
-        let curr: InitNFTBodyDict?  = msg.deployList.get(self.nextItemIndex);
+        let curr: InitNFTBodyDict? = msg.deployList.get(self.nextItemIndex);
 
         while (curr != null) {
             self.deployNFTItem(self.nextItemIndex, curr!!.amount, curr!!.initNFTBody);
