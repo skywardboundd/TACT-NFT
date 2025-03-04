@@ -546,7 +546,7 @@ describe("NFT Collection Contract", () => {
     });
 
     describe("BATCH MINT TESTS", () => {
-        const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint) => {
+        const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint, extra: bigint = -1n) => {
             let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
             let i: bigint = 0n;
     
@@ -564,6 +564,12 @@ describe("NFT Collection Contract", () => {
                     }
                 );
                 i += 1n;
+            }
+            if (extra != -1n){
+                dct.set(extra, {
+                    amount: minTonsForStorage,
+                    initNFTBody: initNFTBody
+                });
             }
     
             let batchMintNFT: BatchDeploy = {
@@ -634,7 +640,45 @@ describe("NFT Collection Contract", () => {
                 success: false,
             });
         });
-    });
+
+        describe("!!--DIFF TEST---!!", () => {
+            it("Should NOT have message in batchdeploy with previous indexes", async () => { 
+                await batchMintNFTProcess(collectionNFT, owner, owner, 50n);
+                let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 50n);
+
+                itemNFT = blockchain.openContract(await NFTItem.fromInit(collectionNFT.address, 10n)); // random number
+
+                expect(trxResult.transactions).not.toHaveTransaction({
+                    from: collectionNFT.address,
+                    to: itemNFT.address
+                })
+            });
+            
+            it("Should NOT throw if we have index > nextItemIndex, just not deploy it (not start+249)", async () => {
+                let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, 50n, 70n);
+                
+                expect(trxResult.transactions).toHaveTransaction({
+                    from: owner.address,
+                    to: collectionNFT.address,
+                    success: true
+                });
+
+                itemNFT = blockchain.openContract(await NFTItem.fromInit(collectionNFT.address, 10n)); // random number
+
+                expect(trxResult.transactions).toHaveTransaction({
+                    from: collectionNFT.address,
+                    to: itemNFT.address,
+                    deploy: true
+                });
+                let extraNFT: SandboxContract<NFTItem> = blockchain.openContract(await NFTItem.fromInit(collectionNFT.address, 70n));
+
+                expect(trxResult.transactions).not.toHaveTransaction({
+                    from: collectionNFT.address,
+                    to: extraNFT.address
+                });
+            });
+        });
+     });
 
     describe("TRANSFER OWNERSHIP TEST", () => {    
         it("Owner should be able to transfer ownership", async () => { 
@@ -643,7 +687,7 @@ describe("NFT Collection Contract", () => {
                 queryId: 1n, 
                 newOwner: notOwner.address,
             };
-    
+
             const trxResult = await collectionNFT.send(owner.getSender(), {value: 100000000n }, changeOwnerMsg);
     
             expect(trxResult.transactions).toHaveTransaction({
