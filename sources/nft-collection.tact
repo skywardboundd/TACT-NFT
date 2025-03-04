@@ -2,15 +2,17 @@ import "./constants";
 import "./messages";
 import "./nft-item";
 
-struct DictDelete {
-    dict: Cell;
+struct DictGet {
     itemIndex: Int? as uint64;
     item: Slice?;
     flag: Int as uint256;
 }
 
-// (cell, (int, slice, int)) ~udict::delete_get_min(cell dict, int key_len) asm(-> 0 2 1 3) "DICTUREMMIN" "NULLSWAPIFNOT2";
-asm(-> 0 2 1 3) fun deleteGetMin(dict: Cell, keySize: Int): DictDelete { DICTUREMMIN NULLSWAPIFNOT2 }
+// (int, slice, int) udict_get_min?(cell dict, int key_len) asm (-> 1 0 2) "DICTUMIN" "NULLSWAPIFNOT2";
+asm(-> 1 0 2) fun dictGetMin(dict: Cell, keySize: Int): DictGet { DICTUMIN NULLSWAPIFNOT2 }
+
+// (int, slice, int) udict_get_next?(cell dict, int key_len, int pivot) asm(pivot dict key_len -> 1 0 2) "DICTUGETNEXT" "NULLSWAPIFNOT2";
+asm(-> 1 0 2) fun dictGetNext(pivot: Int, dict: Cell, keySize: Int): DictGet { DICTUGETNEXT NULLSWAPIFNOT2 }
 
 contract NFTCollection with ExitCodes, GasConstants {
     owner: Address;
@@ -71,13 +73,13 @@ contract NFTCollection with ExitCodes, GasConstants {
     receive(msg: BatchDeploy) {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
 
-        let curr: DictDelete = deleteGetMin(msg.deployList, 64);
-        let counter: Int     = 0;
+        let curr: DictGet = dictGetMin(msg.deployList, 64);
+        let counter: Int  = 0;
 
         while (curr.flag != 0) {
             counter += 1;
             
-            nativeThrowIf(self.IncorrectAmount, counter >= 250);
+            nativeThrowIf(self.IncorrectAmount, counter == 250);
             nativeThrowUnless(self.IncorrectIndexes + counter, curr.itemIndex!! <= self.nextItemIndex);
 
             self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef());
@@ -85,7 +87,7 @@ contract NFTCollection with ExitCodes, GasConstants {
                 self.nextItemIndex += 1;
             }
 
-            curr = deleteGetMin(curr.dict, 64);
+            curr = dictGetNext(curr.itemIndex!!, msg.deployList, 64);
         }
     }
 
