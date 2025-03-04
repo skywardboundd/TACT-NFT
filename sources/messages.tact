@@ -62,7 +62,7 @@ message(1) DeployNFT {
 
 message(2) BatchDeploy {
     queryId: Int as uint64;
-    deployList: map<Int, InitNFTBodyDict >; 
+    deployList: map<Int as uint64, InitNFTBodyDict>; 
 }
 
 message(0xa8cb00ad) ReportRoyaltyParams {

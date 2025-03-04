@@ -3,6 +3,14 @@ import "./constants";
 import "./messages";
 import "./nft-item";
 
+struct DictGet {
+    item: Slice;
+    flag: Int;
+}
+
+// (slice, int) udict_get?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUGET" "NULLSWAPIFNOT";
+asm fun dictGet(index: Int, dict: Cell, keySize: Int): DictGet { DICTUGET NULLSWAPIFNOT}
+
 contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferable {
     owner: Address;
     nextItemIndex: Int as uint64;
@@ -71,20 +79,23 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
 
     receive(msg: BatchDeploy) {
         self.requireOwner();
+
+        let dct: Cell = msg.deployList.asCell()!!;
         
         nativeReserve(0, 4);
 
-        // not more than 250 
-        let check: InitNFTBodyDict? = msg.deployList.get(self.nextItemIndex + 249);
-        throwUnless(self.IncorrectAmount, check == null);
-        
-        let curr: InitNFTBodyDict? = msg.deployList.get(self.nextItemIndex);
+        // not >= 250 
+        let check: DictGet = dictGet(self.nextItemIndex + 249, dct, 64);
+        throwUnless(self.IncorrectAmount, check.flag == 0);
 
-        while (curr != null) {
-            self.deployNFTItem(self.nextItemIndex, curr!!.amount, curr!!.initNFTBody);
+        let curr: DictGet = dictGet(self.nextItemIndex, dct, 64);
+
+        while (curr.flag != 0) {
+            let xd: InitNFTBodyDict = InitNFTBodyDict.fromSlice(curr.item.loadRef().beginParse());
+            self.deployNFTItem(self.nextItemIndex, xd.amount, xd.initNFTBody);
             
             self.nextItemIndex += 1;
-            curr = msg.deployList.get(self.nextItemIndex);
+            curr = dictGet(self.nextItemIndex, dct, 64);
         }
 
         send(SendParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance }); // return tons
