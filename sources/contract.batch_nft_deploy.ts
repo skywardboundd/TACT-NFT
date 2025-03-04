@@ -1,8 +1,10 @@
-import { beginCell, toNano, TonClient4, WalletContractV4, internal, fromNano, address, Slice, Builder, Dictionary } from "@ton/ton";
+import { beginCell, contractAddress, toNano, TonClient4, WalletContractV4, internal, fromNano, Cell, address, Slice, Builder, Dictionary } from "@ton/ton";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 
-import { NFTCollection, InitNFTBodyDict, BatchDeploy, storeBatchDeploy, InitNFTBody } from "./output/NFT_NFTCollection";
+import { NFTCollection, RoyaltyParams, DeployNFT, InitNFTBody, storeInitNFTBody, loadInitNFTBody, BatchDeploy, storeBatchDeploy } from "./output/NFT_NFTCollection";
+
 import * as dotenv from "dotenv";
+import { NFTItem, storeDeployNFT } from "./output/NFT_NFTItem";
 dotenv.config();
 
 
@@ -11,7 +13,7 @@ dotenv.config();
     Here are the instructions to deploy the contract:
     1. Create new walletV4r2 or use existing one.
     2. Enter your mnemonics in .env file.
-    3. On line 28 select the network you want to deploy the contract.
+    3. On line 47 select the network you want to deploy the contract.
     (// - comments out the line, so you can switch between networks)
     (testnet is chosen by default, if you are not familiar with it, read https://tonkeeper.helpscoutdocs.com/article/100-how-switch-to-the-testnet)
     4. Change content according to standard https://github.com/ton-blockchain/TEPs/blob/master/text/0064-token-data-standard.md 
@@ -20,7 +22,23 @@ dotenv.config();
     7. Run this script by "yarn batchdeploynft"
  */
 
-const minTonsForStorage = 50000000n;
+export type dictDeployNFT = {
+    amount: bigint;
+    initNFTBody: InitNFTBody;
+};
+
+export const dictDeployNFTItem = {
+    serialize: (src: dictDeployNFT, builder: Builder) => {
+        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
+    },
+    parse: (src: Slice) => {
+        return {
+            amount: src.loadCoins(),
+            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
+        };
+    },
+};
+
 
 (async () => {
     //create client for testnet sandboxv4 API - alternative endpoint
@@ -43,55 +61,51 @@ const minTonsForStorage = 50000000n;
     // NOTICE: the parameters inside the init functions were the input for the contract address
     // which means any changes will change the smart contract address as well=
     let addressNFTCollection = process.env.COLLECTION_ADDRESS!!.toString();
-    let deployItemAmount = toNano("0.05");
+    let deployItemAmount = toNano("0.005");
+    let deployAmount = toNano("0.3");
     
     let contract = await NFTCollection.fromAddress(address(addressNFTCollection));
     let contract_open = await client4.open(contract);
     let nextItemIndex: bigint = (await contract_open.getGetCollectionData()).nextItemIndex;
-    
-    
+
+
     // send a message on new address contract to deploy it
     let seqno: number = await deployer_wallet_contract.getSeqno();
     console.log("🛠️Preparing new outgoing massage from deployment wallet. \n" + deployer_wallet_contract.address);
     console.log("Seqno: ", seqno + "\n");
-    
+
     // Get deployment wallet balance
     let balance: bigint = await deployer_wallet_contract.getBalance();
-    
+
     console.log("Current deployment wallet balance = ", fromNano(balance).toString(), "💎TON");
     console.log("Deploying collection");
-    
+
     let owner = deployer_wallet_contract.address;
     
-    let dct: Dictionary<bigint, InitNFTBodyDict> = Dictionary.empty();
+    let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
     
-    let deployAmount = toNano("1");
     let i: bigint = 0n;
     for(i; i < 10n; i++) {
-        let content = beginCell().storeStringTail(nextItemIndex.toString() + "/meta.json").endCell();
+        let content = beginCell().storeStringTail(nextItemIndex.toString() + ".json").endCell();
 
         let initNFTBody: InitNFTBody = {
             $$type: 'InitNFTBody',
-            queryId: 0n,
             owner: owner,
             content: content,
         }
-        
-        let initNFTBodyDict: InitNFTBodyDict = {
-            $$type: 'InitNFTBodyDict',
-            amount: minTonsForStorage,
-            initNFTBody: initNFTBody
-        }
 
-        dct.set(nextItemIndex, initNFTBodyDict);
+        dct.set(nextItemIndex, { 
+            amount: deployItemAmount,
+            initNFTBody: initNFTBody
+        });
         nextItemIndex += 1n;
     }
 
-    let batchMintNFT: BatchDeploy = {
-        $$type: 'BatchDeploy',
+    let msg_body: BatchDeploy = {
+        $$type: "BatchDeploy",
         queryId: 0n,
-        deployList: dct,
-    }
+        deployList: beginCell().storeDictDirect(dct).endCell()
+    };
 
     await deployer_wallet_contract.sendTransfer({
         seqno,
@@ -100,7 +114,7 @@ const minTonsForStorage = 50000000n;
             internal({
                 to: addressNFTCollection,
                 value: deployAmount,
-                body: beginCell().store(storeBatchDeploy(batchMintNFT)).endCell()
+                body: beginCell().store(storeBatchDeploy(msg_body)).endCell()
             }),
         ],
     });
