@@ -19,6 +19,7 @@ contract NFTCollection with ExitCodes, GasConstants {
     royaltyParams: RoyaltyParams;
 
     commonCode: Cell;
+    commonData: Builder;
 
     init(owner: Address, nextItemIndex: Int, collectionContent: Cell, royaltyParams: RoyaltyParams) {
         self.owner         = owner;
@@ -27,11 +28,11 @@ contract NFTCollection with ExitCodes, GasConstants {
         self.royaltyParams = royaltyParams;
 
         self.commonCode    = (initOf NFTItem(myAddress(), 0)).code;
-        // with adding commonData we have 148 -> 147
+        self.commonData    = beginCell().storeUint(0, 1).storeAddress(myAddress());
     }
     
-    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell, commonData: Builder) {
-        let data: Cell = commonData.storeInt(itemIndex, 257).endCell();
+    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell) {
+        let data: Cell = self.commonData.storeInt(itemIndex, 257).endCell();
 
         deploy(DeployParameters{
             value: amount,
@@ -60,8 +61,7 @@ contract NFTCollection with ExitCodes, GasConstants {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner); 
         nativeThrowUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
 
-        let commonData    = beginCell().storeUint(0, 1).storeAddress(myAddress());
-        self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody, commonData); 
+        self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody); 
 
         if(msg.itemIndex == self.nextItemIndex) {
             self.nextItemIndex += 1;
@@ -71,9 +71,8 @@ contract NFTCollection with ExitCodes, GasConstants {
     receive(msg: BatchDeploy) {
         nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
 
-        let counter: Int        = 0;
-        let curr: DictDelete    = deleteGetMin(msg.deployList, 64);
-        let commonData: Builder = beginCell().storeUint(0, 1).storeAddress(myAddress());
+        let curr: DictDelete = deleteGetMin(msg.deployList, 64);
+        let counter: Int     = 0;
 
         while (curr.flag != 0) {
             counter += 1;
@@ -81,7 +80,7 @@ contract NFTCollection with ExitCodes, GasConstants {
             nativeThrowIf(self.IncorrectAmount, counter >= 250);
             nativeThrowUnless(self.IncorrectIndexes + counter, curr.itemIndex!! <= self.nextItemIndex);
 
-            self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef(), commonData);
+            self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef());
             if (curr.itemIndex!! == self.nextItemIndex) {
                 self.nextItemIndex += 1;
             }
