@@ -1,7 +1,7 @@
 import { beginCell, toNano, TonClient4, WalletContractV4, internal, fromNano, address, Slice, Builder, Dictionary } from "@ton/ton";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 
-import { NFTCollection, InitNFTBodyDict, BatchDeploy, storeBatchDeploy } from "./output/NFT_NFTCollection";
+import { NFTCollection, InitNFTBodyDict, BatchDeploy, storeBatchDeploy, InitNFTBody } from "./output/NFT_NFTCollection";
 import * as dotenv from "dotenv";
 dotenv.config();
 
@@ -70,14 +70,20 @@ const minTonsForStorage = 50000000n;
     for(i; i < 10n; i++) {
         let content = beginCell().storeStringTail(nextItemIndex.toString() + "/meta.json").endCell();
 
-        let initNFTBody: InitNFTBodyDict = {
-            $$type: 'InitNFTBodyDict',
-            amount: minTonsForStorage,
+        let initNFTBody: InitNFTBody = {
+            $$type: 'InitNFTBody',
+            queryId: 0n,
             owner: owner,
             content: content,
         }
+        
+        let initNFTBodyDict: InitNFTBodyDict = {
+            $$type: 'InitNFTBodyDict',
+            amount: minTonsForStorage,
+            initNFTBody: initNFTBody
+        }
 
-        dct.set(nextItemIndex, initNFTBody);
+        dct.set(nextItemIndex, initNFTBodyDict);
         nextItemIndex += 1n;
     }
 

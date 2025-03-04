@@ -537,13 +537,19 @@ describe("NFT Collection Contract", () => {
             let i: bigint = 0n;
 
             while (i < count) {
-                let initNFTBody: InitNFTBodyDict = {
+                let initNFTBody: InitNFTBody = {
+                    $$type: 'InitNFTBody',
+                    queryId: 0n,
+                    owner: owner.address,
+                    content: content
+                }
+
+                let initNFTBodyDict: InitNFTBodyDict = {
                     $$type: 'InitNFTBodyDict',
                     amount: minTonsForStorage,
-                    owner: owner.address,
-                    content: content,
+                    initNFTBody: initNFTBody
                 }
-                dct.set(i + nextItemIndex, initNFTBody);
+                dct.set(i + nextItemIndex, initNFTBodyDict);
                 i += 1n;
             }
     

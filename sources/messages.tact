@@ -33,8 +33,7 @@ struct InitNFTBodyVals {
 
 struct InitNFTBodyDict { 
     amount: Int as coins;
-    owner: Address;
-    content: Cell;
+    initNFTBody: InitNFTBody;
 }
 
 struct CollectionData {
