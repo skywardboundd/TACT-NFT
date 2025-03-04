@@ -30,12 +30,12 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
         self.commonData    = beginCell().storeUint(0, 1).storeAddress(myAddress());
     }
     
-    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: InitNFTBody) {
+    inline fun deployNFTItem(itemIndex: Int, amount: Int, initNFTBody: Cell) {
         let data: Cell = self.commonData.storeInt(itemIndex, 257).endCell();
 
         deploy(DeployParameters{
             value: amount,
-            body: initNFTBody.toCell(),
+            body: initNFTBody,
             init: StateInit{code: self.commonCode, data: data},
             mode: SendPayGasSeparately     
         })
@@ -68,7 +68,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             content: msg.content
         };
 
-        self.deployNFTItem(msg.itemIndex, msg.amount, initNFTBody); 
+        self.deployNFTItem(msg.itemIndex, msg.amount, initNFTBody.toCell()); 
 
         if(msg.itemIndex == self.nextItemIndex) {
             self.nextItemIndex += 1;
@@ -79,23 +79,19 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
 
     receive(msg: BatchDeploy) {
         self.requireOwner();
-
-        let dct: Cell = msg.deployList.asCell()!!;
         
         nativeReserve(0, 4);
 
         // not >= 250 
-        let check: DictGet = dictGet(self.nextItemIndex + 249, dct, 64);
+        let check: DictGet = dictGet(self.nextItemIndex + 249, msg.deployList, 64);
         throwUnless(self.IncorrectAmount, check.flag == 0);
 
-        let curr: DictGet = dictGet(self.nextItemIndex, dct, 64);
-
+        let curr: DictGet = dictGet(self.nextItemIndex, msg.deployList, 64);
         while (curr.flag != 0) {
-            let xd: InitNFTBodyDict = InitNFTBodyDict.fromSlice(curr.item.loadRef().beginParse());
-            self.deployNFTItem(self.nextItemIndex, xd.amount, xd.initNFTBody);
+            self.deployNFTItem(self.nextItemIndex, curr.item.loadCoins(), curr.item.loadRef());
             
             self.nextItemIndex += 1;
-            curr = dictGet(self.nextItemIndex, dct, 64);
+            curr = dictGet(self.nextItemIndex, msg.deployList, 64);
         }
 
         send(SendParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance }); // return tons

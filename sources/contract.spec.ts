@@ -31,6 +31,24 @@ import {
 import "@ton/test-utils";
 import { randomInt } from 'crypto';
 
+export type dictDeployNFT = {
+    amount: bigint;
+    initNFTBody: InitNFTBody;
+};
+// for correct work with dictionary 
+export const dictDeployNFTItem = {
+    serialize: (src: dictDeployNFT, builder: Builder) => {
+        builder.storeCoins(src.amount).storeRef(beginCell().store(storeInitNFTBody(src.initNFTBody)).endCell());
+    },
+    parse: (src: Slice) => {
+        return {
+            amount: src.loadCoins(),
+            initNFTBody: loadInitNFTBody(src.loadRef().asSlice()),
+        };
+    },
+};
+
+
 const minTonsForStorage = 50000000n;
 const sendTransfer = async (
     itemNFT: SandboxContract<NFTItem>,
@@ -529,37 +547,32 @@ describe("NFT Collection Contract", () => {
 
     describe("BATCH MINT TESTS", () => {
         const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint) => {
-            let content = Cell.fromBase64("te6ccgEBAQEAAgAAAA==");
-            
-            let dct: Dictionary<bigint, InitNFTBodyDict> = Dictionary.empty();
-            
-            let nextItemIndex = await collectionNFT.getNextItemIndex()!!;
+            let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
             let i: bigint = 0n;
-
+    
+            let initNFTBody: InitNFTBody = {
+                $$type: 'InitNFTBody',
+                queryId: 0n,
+                owner: owner.address,
+                content: defaultNFTContent,
+            }
+    
             while (i < count) {
-                let initNFTBody: InitNFTBody = {
-                    $$type: 'InitNFTBody',
-                    queryId: 0n,
-                    owner: owner.address,
-                    content: content
-                }
-
-                let initNFTBodyDict: InitNFTBodyDict = {
-                    $$type: 'InitNFTBodyDict',
-                    amount: minTonsForStorage,
-                    initNFTBody: initNFTBody
-                }
-                dct.set(i + nextItemIndex, initNFTBodyDict);
+                dct.set(i, {
+                        amount: minTonsForStorage,
+                        initNFTBody: initNFTBody
+                    }
+                );
                 i += 1n;
             }
     
             let batchMintNFT: BatchDeploy = {
                 $$type: 'BatchDeploy',
                 queryId: 0n,
-                deployList: dct,
+                deployList: beginCell().storeDictDirect(dct).endCell(),
             }
-            console.log(dct.Cell)
-            const trxResult = await collectionNFT.send(sender.getSender(), {value:  minTonsForStorage * count + toNano("100") }, batchMintNFT);
+            
+            const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("100") * (count + 10n) }, batchMintNFT);
             return trxResult;
         };
         beforeEach(async () => {});

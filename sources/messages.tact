@@ -26,14 +26,9 @@ message InitNFTBody {
     content: Cell;
 }
 
-struct InitNFTBodyVals { 
-    owner: Address;
-    content: Cell;
-}
-
 struct InitNFTBodyDict { 
     amount: Int as coins;
-    initNFTBody: InitNFTBody;
+    initNFTBody: Cell; // InitNFTBody
 }
 
 struct CollectionData {
@@ -62,7 +57,7 @@ message(1) DeployNFT {
 
 message(2) BatchDeploy {
     queryId: Int as uint64;
-    deployList: map<Int as uint64, InitNFTBodyDict>; 
+    deployList: Cell; // map<Int as uint64, InitNFTBodyDict>; 
 }
 
 message(0xa8cb00ad) ReportRoyaltyParams {
