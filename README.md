@@ -29,20 +29,21 @@ To test TACT contracts run:
 yarn test
 ```
 
-If you want to quickly check your changes for validity, run:
 
 ## Idea of this standard 
-### Deploy 1 NFT
-It makes sense to make sure we send at least a minimum of a tone to storage, and to return the remaining tons after such messages so we don't have to guess. Also, it makes sense to notify the new owner after the nft is deployed, as in the case of a transfer.
 
-And it will be much cleaner when we have message to deploy
+### Deploy 1 NFT
+It will be much cleaner when we have message to deploy, and return all remaining tons to owner
+
+Notify owner of NFT about this nft
 
 ### Batch deploy 
-1) It doesn't make sense to mint old nfts, just because nft have already been initialized, so it only makes sense to mint immediately nextItemIndex and take exactly the next item via get, not delete, because if the next index will be > nextItemIndex, we will get throw immediately. 
+It doesn't make sense to mint old nfts, just because nft have already been initialized, so it only makes sense to mint immediately nextItemIndex and take exactly the next item via get, not delete, because if the next index will be > nextItemIndex, we will get throw immediately. 
 
 That's why we can use map in tact, not dict-like cells with asm function ( and auto-code for building this dictionary )
 
-2) Return remaining tons to owner
+## Unresolved questions
+Should we check `amount > minTonsAmount` on deploy? 
 
 ## Deployment
 

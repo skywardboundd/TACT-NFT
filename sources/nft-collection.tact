@@ -4,14 +4,13 @@ import "./messages";
 import "./nft-item";
 
 contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferable {
-    commonCode: Cell;
-    commonData: Builder;
-    
     owner: Address;
     nextItemIndex: Int as uint64;
     content: Cell;
     royaltyParams: RoyaltyParams;
 
+    commonCode: Cell;
+    commonData: Builder;
 
     init(owner: Address, nextItemIndex: Int, collectionContent: Cell, royaltyParams: RoyaltyParams) {
         self.owner         = owner;
@@ -72,9 +71,10 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
 
     receive(msg: BatchDeploy) {
         self.requireOwner();
-
+        
         nativeReserve(0, 4);
 
+        // not more than 250 
         let check: InitNFTBodyDict? = msg.deployList.get(self.nextItemIndex + 249);
         throwUnless(self.IncorrectAmount, check == null);
         
