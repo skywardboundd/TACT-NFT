@@ -79,8 +79,6 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
         
         let curr: InitNFTBodyDict?  = msg.deployList.get(self.nextItemIndex);
         while (curr != null) {
-            throwUnless(self.IncorrectIndexes + self.nextItemIndex, self.nextItemIndex <= self.nextItemIndex); 
-            
             let initNFTBody = InitNFTBody {
                 queryId: msg.queryId,
                 owner: curr!!.owner,
