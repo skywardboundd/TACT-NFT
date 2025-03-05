@@ -60,8 +60,8 @@ contract NFTCollection with ExitCodes, GasConstants {
     }
 
     receive(msg: DeployNFT) {
-        nativeThrowUnless(self.IncorrectSender, sender() == self.owner); 
-        nativeThrowUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
+        throwUnless(self.IncorrectSender, sender() == self.owner); 
+        throwUnless(self.IncorrectIndex, msg.itemIndex <= self.nextItemIndex);
 
         self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody); 
 
@@ -71,7 +71,7 @@ contract NFTCollection with ExitCodes, GasConstants {
     }
 
     receive(msg: BatchDeploy) {
-        nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
+        throwUnless(self.IncorrectSender, sender() == self.owner);
 
         let curr: DictGet = dictGetMin(msg.deployList, 64);
         let counter: Int  = 0;
@@ -79,8 +79,8 @@ contract NFTCollection with ExitCodes, GasConstants {
         while (curr.flag != 0) {
             counter += 1;
             
-            nativeThrowIf(self.IncorrectAmount, counter == 250);
-            nativeThrowUnless(self.IncorrectIndexes + counter, curr.itemIndex!! <= self.nextItemIndex);
+            throwIf(self.IncorrectAmount, counter == 250);
+            throwUnless(self.IncorrectIndexes + counter, curr.itemIndex!! <= self.nextItemIndex);
 
             self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef());
             if (curr.itemIndex!! == self.nextItemIndex) {
@@ -92,7 +92,7 @@ contract NFTCollection with ExitCodes, GasConstants {
     }
 
     receive(msg: ChangeOwner)  {
-        nativeThrowUnless(self.IncorrectSender, sender() == self.owner);
+        throwUnless(self.IncorrectSender, sender() == self.owner);
         self.owner = msg.newOwner;
     }
     
