@@ -554,8 +554,8 @@ describe("NFT Collection Contract", () => {
     describe("BATCH MINT TESTS", () => {
         const batchMintNFTProcess = async (collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>, count: bigint, extra: bigint = -1n) => {
             let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
+            let prevNextItemIndex = await collectionNFT.getNextItemIndex();
             let i: bigint = 0n;
-    
             let initNFTBody: InitNFTBody = {
                 $$type: 'InitNFTBody',
                 queryId: 0n,
@@ -564,7 +564,7 @@ describe("NFT Collection Contract", () => {
             }
     
             while (i < count) {
-                dct.set(i, {
+                dct.set(prevNextItemIndex + i, {
                         amount: minTonsForStorage,
                         initNFTBody: initNFTBody
                     }
@@ -572,7 +572,7 @@ describe("NFT Collection Contract", () => {
                 i += 1n;
             }
             if (extra != -1n){
-                dct.set(extra, {
+                dct.set(prevNextItemIndex + extra, {
                     amount: minTonsForStorage,
                     initNFTBody: initNFTBody
                 });
@@ -587,11 +587,12 @@ describe("NFT Collection Contract", () => {
             const trxResult = await collectionNFT.send(sender.getSender(), {value: toNano("100") * (count + 10n) }, batchMintNFT);
             return trxResult;
         };
+
         beforeEach(async () => {});
         
         it("test max batch mint", async () => {
             let L = 1n;
-            let R = 250n;
+            let R = 600n;
             while(R - L > 1) { 
                 let M = (L + R) / 2n;
                 let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, M);
