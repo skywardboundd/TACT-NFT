@@ -20,7 +20,7 @@ asm fun cashback128(to: Address) {
     111 STUR         // .storeUint(0, 111)
                      // 4 zeros for coins and 107 zeros for lt, fees, etc.
     ENDC
-    128 PUSHINT       // SendRemainingValue | SendIgnoreErrors
+    128 PUSHINT       // SendRemainingBalance
     SENDRAWMSG
 }
 
