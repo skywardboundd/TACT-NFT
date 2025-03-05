@@ -17,11 +17,11 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
         self.collectionAddress = collectionAddress;
     }
 
-    fun forceChain(address: Address) {
+    inline fun forceChain(address: Address) {
         nativeThrowUnless(self.InvalidDestinationWorkchain, parseStdAddress(address.asSlice()).workchain == 0);
     }
 
-    fun sendMsg(toAddress: Address, amount: Int, op: Int, queryId: Int, payload: Builder, sendMode: Int) {
+    inline fun sendMsg(toAddress: Address, amount: Int, op: Int, queryId: Int, payload: Builder, sendMode: Int) {
         let msgBody = beginCell().storeUint(op, 32).storeUint(queryId, 64);
         
         if (payload.bits() != 0 || payload.refs() != 0) {
