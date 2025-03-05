@@ -556,6 +556,7 @@ describe("NFT Collection Contract", () => {
             let dct = Dictionary.empty(Dictionary.Keys.BigUint(64), dictDeployNFTItem);
             let prevNextItemIndex = await collectionNFT.getNextItemIndex();
             let i: bigint = 0n;
+            
             let initNFTBody: InitNFTBody = {
                 $$type: 'InitNFTBody',
                 queryId: 0n,
@@ -594,6 +595,7 @@ describe("NFT Collection Contract", () => {
             let L = 1n;
             let R = 600n;
             while(R - L > 1) { 
+                let prev = await blockchain.snapshot();
                 let M = (L + R) / 2n;
                 let trxResult = await batchMintNFTProcess(collectionNFT, owner, owner, M);
                 try{ 
@@ -607,6 +609,7 @@ describe("NFT Collection Contract", () => {
                 catch { 
                     R = M;
                 }
+                await blockchain.loadFrom(prev);
             }
             console.log("maximum batch amount is", L);
         });
