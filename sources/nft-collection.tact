@@ -11,6 +11,19 @@ struct DictGet {
 // (slice, int) udict_get?(cell dict, int key_len, int index) asm(index dict key_len) "DICTUGET" "NULLSWAPIFNOT";
 asm fun dictGet(index: Int, dict: Cell, keySize: Int): DictGet { DICTUGET NULLSWAPIFNOT}
 
+asm fun cashback128(to: Address) {
+    16 PUSHINT       // 0x10, i.e. 0x18 but with bounce = false
+    NEWC
+    6 STU            // .storeUint(0x10, 6)
+    STSLICE          // .storeAddress(to)
+    0 PUSHINT        // 0
+    111 STUR         // .storeUint(0, 111)
+                     // 4 zeros for coins and 107 zeros for lt, fees, etc.
+    ENDC
+    128 PUSHINT       // SendRemainingValue | SendIgnoreErrors
+    SENDRAWMSG
+}
+
 contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferable {
     owner: Address;
     nextItemIndex: Int as uint64;
@@ -68,7 +81,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             self.nextItemIndex += 1;
         }
 
-        message(MessageParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance });
+        cashback128(sender());
     }
 
     receive(msg: BatchDeploy) {
@@ -88,7 +101,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             curr = dictGet(self.nextItemIndex, msg.deployList, 64);
         }
 
-        message(MessageParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance }); // return tons
+        cashback128(sender());
     }
     
     get fun get_collection_data(): CollectionData {
