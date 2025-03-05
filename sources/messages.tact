@@ -51,8 +51,7 @@ message(1) DeployNFT {
     queryId: Int as uint64;
     itemIndex: Int as uint64;
     amount: Int as coins;
-    owner: Address;
-    content: Cell;
+    initNFTBody: Cell; // ^InitNFTBody;
 }
 
 message(2) BatchDeploy {

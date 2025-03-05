@@ -462,13 +462,19 @@ describe("NFT Collection Contract", () => {
         
         const deployNFT = async (itemIndex: bigint, collectionNFT: SandboxContract<NFTCollection>, sender: SandboxContract<TreasuryContract>, owner: SandboxContract<TreasuryContract>): Promise<[SandboxContract<NFTItem>, any]>  => {
             
+            let initNFTBody: InitNFTBody = {
+                $$type: 'InitNFTBody',
+                queryId: 1n,
+                owner: owner.address,
+                content: defaultNFTContent,
+            }
+
             let mintMsg: DeployNFT = {
                 $$type: 'DeployNFT',
                 queryId: 1n, 
                 itemIndex: itemIndex,
                 amount: minTonsForStorage,
-                owner: owner.address,
-                content: defaultNFTContent
+                initNFTBody: beginCell().store(storeInitNFTBody(initNFTBody)).endCell() 
             };
             
             itemNFT = blockchain.openContract(await NFTItem.fromInit(collectionNFT.address, itemIndex));

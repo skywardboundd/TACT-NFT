@@ -62,13 +62,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
 
         nativeReserve(0, 4);
 
-        let initNFTBody = InitNFTBody{
-            queryId: msg.queryId,
-            owner: msg.owner,
-            content: msg.content
-        };
-
-        self.deployNFTItem(msg.itemIndex, msg.amount, initNFTBody.toCell()); 
+        self.deployNFTItem(msg.itemIndex, msg.amount, msg.initNFTBody); 
 
         if(msg.itemIndex == self.nextItemIndex) {
             self.nextItemIndex += 1;
