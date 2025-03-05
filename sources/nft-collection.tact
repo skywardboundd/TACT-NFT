@@ -47,7 +47,7 @@ contract NFTCollection with ExitCodes, GasConstants {
     receive() {} // ignore empty messages
     
     receive(msg: GetRoyaltyParams) {
-        send(SendParameters{
+        message(MessageParameters{
             bounce: false,
             to: sender(),
             value: 0,
