@@ -90,6 +90,7 @@ export const dictDeployNFTItem = {
 
         let initNFTBody: InitNFTBody = {
             $$type: 'InitNFTBody',
+            queryId: 0n,
             owner: owner,
             content: content,
         }
