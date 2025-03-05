@@ -44,7 +44,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
     receive() {} // igrore empty messages
     
     receive(msg: GetRoyaltyParams) {
-        send(SendParameters{
+        message(MessageParameters{
             bounce: false,
             to: sender(),
             value: 0,
@@ -68,7 +68,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             self.nextItemIndex += 1;
         }
 
-        send(SendParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance });
+        message(MessageParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance });
     }
 
     receive(msg: BatchDeploy) {
@@ -88,7 +88,7 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             curr = dictGet(self.nextItemIndex, msg.deployList, 64);
         }
 
-        send(SendParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance }); // return tons
+        message(MessageParameters{ bounce: false, to: sender(), value: 0, mode: SendRemainingBalance }); // return tons
     }
     
     get fun get_collection_data(): CollectionData {

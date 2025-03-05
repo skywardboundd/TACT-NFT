@@ -27,7 +27,7 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
             msgBody.storeBuilder(payload);
         }
         
-        send(SendParameters{
+        message(MessageParameters{
             bounce: false,
             to: toAddress,
             value: amount,
