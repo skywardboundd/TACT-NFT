@@ -17,7 +17,7 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
     }
 
     inline fun forceChain(address: Address) {
-        nativeThrowUnless(self.InvalidDestinationWorkchain, parseStdAddress(address.asSlice()).workchain == 0);
+        throwUnless(self.InvalidDestinationWorkchain, parseStdAddress(address.asSlice()).workchain == 0);
     }
 
     inline fun sendMsg(toAddress: Address, amount: Int, op: Int, queryId: Int, payload: Builder, sendMode: Int) {
@@ -40,8 +40,8 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
 
     // we need it to accept deploy body from NFTCollection
     receive(msg: InitNFTBody){
-        nativeThrowUnless(self.IncorrectDeployer, sender() == self.collectionAddress);
-        nativeThrowUnless(self.AlreadyInit, self.owner == null);
+        throwUnless(self.IncorrectDeployer, sender() == self.collectionAddress);
+        throwUnless(self.AlreadyInit, self.owner == null);
         self.owner   = msg.owner;
         self.content = msg.content;
 
@@ -50,10 +50,10 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
 
     receive(msg: Transfer) {
         // not init 
-        nativeThrowUnless(self.NotInit, self.owner != null);
-        nativeThrowUnless(self.IncorrectSender, self.owner!! == sender());
+        throwUnless(self.NotInit, self.owner != null);
+        throwUnless(self.IncorrectSender, self.owner!! == sender());
         
-        nativeThrowUnless(708, msg.forwardPayload.bits() >= 1);
+        throwUnless(708, msg.forwardPayload.bits() >= 1);
         self.forceChain(msg.newOwner);
 
         let fwdFees: Int = context().readForwardFee();
@@ -70,7 +70,7 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
             restAmount -= fwdFees;
         }
 
-        nativeThrowUnless(self.InvalidFees, restAmount >= 0);
+        throwUnless(self.InvalidFees, restAmount >= 0);
 
         if(msg.forwardAmount > 0){
             self.sendMsg(msg.newOwner, msg.forwardAmount, self.OwnershipAssigned, msg.queryId, beginCell().storeAddress(self.owner!!).storeSlice(msg.forwardPayload), SendPayGasSeparately);
@@ -84,7 +84,7 @@ contract NFTItem with ExitCodes, GasConstants, OpCodes {
 
     receive(msg: GetStaticData) {
         // uninit
-        nativeThrowUnless(self.NotInit, self.owner != null);
+        throwUnless(self.NotInit, self.owner != null);
 
         self.sendMsg(sender(), 0, self.ReportStaticData, msg.queryId, beginCell().storeUint(self.itemIndex, 256).storeAddress(self.collectionAddress), SendRemainingValue);
     }
