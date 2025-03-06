@@ -5,7 +5,7 @@ import "./nft-item";
 struct DictGet {
     itemIndex: Int? as uint64;
     item: Slice?;
-    flag: Int as uint256;
+    flag: Int;
 }
 
 // (int, slice, int) udict_get_min?(cell dict, int key_len) asm (-> 1 0 2) "DICTUMIN" "NULLSWAPIFNOT2";
