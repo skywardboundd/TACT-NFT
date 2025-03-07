@@ -79,7 +79,6 @@ contract NFTCollection with ExitCodes, GasConstants {
         while (curr.flag != 0) {
             counter += 1;
             
-            throwIf(self.IncorrectAmount, counter == 250);
             throwUnless(self.IncorrectIndexes + counter, curr.itemIndex!! <= self.nextItemIndex);
 
             self.deployNFTItem(curr.itemIndex!!, curr.item!!.loadCoins(), curr.item!!.loadRef());
@@ -89,6 +88,7 @@ contract NFTCollection with ExitCodes, GasConstants {
 
             curr = dictGetNext(curr.itemIndex!!, msg.deployList, 64);
         }
+				throwIf(self.IncorrectAmount, counter >= 250);
     }
 
     receive(msg: ChangeOwner)  {
