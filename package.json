@@ -5,7 +5,9 @@
     "lint": "yarn misti ./tact.config.json",
     "test": "yarn build && jest",
     "deploy": "ts-node ./sources/contract.deploy.ts",
-    "read": "ts-node ./sources/contract.read.ts"
+    "read": "ts-node ./sources/contract.read.ts",
+    "deploynft": "ts-node ./sources/contract.nft_deploy.ts",
+    "batchdeploynft": "ts-node ./sources/contract.batch_nft_deploy.ts"
   },
   "dependencies": {
     "@nowarp/misti": "~0.7.0",
