@@ -86,7 +86,7 @@ export const dictDeployNFTItem = {
     
     let i: bigint = 0n;
     for(i; i < 10n; i++) {
-        let content = beginCell().storeStringTail(nextItemIndex.toString() + ".json").endCell();
+        let content = beginCell().storeStringTail(nextItemIndex.toString() + "/meta.json").endCell();
 
         let initNFTBody: InitNFTBody = {
             $$type: 'InitNFTBody',
