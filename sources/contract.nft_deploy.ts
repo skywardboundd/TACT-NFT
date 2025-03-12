@@ -92,7 +92,7 @@ dotenv.config();
         ],
     });
 
-    let init = await NFTItem.init(nextItemIndex, address(addressNFTCollection));
+    let init = await NFTItem.init(address(addressNFTCollection), nextItemIndex);
     let itemNFTAddress = contractAddress(workchain, init);
 
     console.log("New nft item: ", itemNFTAddress);
