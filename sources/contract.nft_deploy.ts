@@ -87,7 +87,7 @@ dotenv.config();
         messages: [
             internal({
                 to: addressNFTCollection,
-                value: deployAmount,
+                value: deployAmount + toNano("0.1"),
                 body: beginCell().store(storeDeployNFT(mintMsg)).endCell()
             }),
         ],
