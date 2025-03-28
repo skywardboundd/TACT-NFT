@@ -493,6 +493,8 @@ describe("NFT Collection Contract", () => {
             expect(nftData.owner).toEqualAddress(owner.address);
             expect(nftData.itemIndex).toBe(nextItemIndex);
             expect(nftData.collectionAddress).toEqualAddress(collectionNFT.address);
+
+            expect(trx.transactions).not.toHaveTransaction({success: false});
     
         });
     

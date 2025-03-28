@@ -81,7 +81,8 @@ contract NFTCollection with ExitCodes, GasConstants, OpCodes, OwnableTransferabl
             self.nextItemIndex += 1;
         }
 
-        cashback128(sender());
+        commit();
+        throw(1);
     }
 
     receive(msg: BatchDeploy) {
